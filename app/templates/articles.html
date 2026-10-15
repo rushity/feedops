@@ -1,15 +1,46 @@
 {% extends "base.html" %}
-{% block title %}Articles - FeedOps{% endblock %}
+{% block title %}Articles{% if query %} matching "{{ query }}"{% endif %} - FeedOps{% endblock %}
 {% block content %}
 <h1>Articles{% if query %} matching "{{ query }}"{% endif %}</h1>
+
+<form class="inline-form" method="get" action="{{ url_for('articles.article_list') }}" role="search">
+  <input type="search" name="q" placeholder="Search title or summary..." value="{{ query | default('') }}" aria-label="Search articles" />
+  <select name="source" aria-label="Filter by source">
+    <option value="">All sources</option>
+    {% for s in (options.sources if options else []) %}
+    <option value="{{ s }}" {% if filters and filters.source == s %}selected{% endif %}>{{ s }}</option>
+    {% endfor %}
+  </select>
+  <select name="category" aria-label="Filter by category">
+    <option value="">All categories</option>
+    {% for c in (options.categories if options else []) %}
+    <option value="{{ c }}" {% if filters and filters.category == c %}selected{% endif %}>{{ c }}</option>
+    {% endfor %}
+  </select>
+  <input type="date" name="date_from" value="{{ filters.date_from if filters else '' }}" aria-label="From date" />
+  <input type="date" name="date_to" value="{{ filters.date_to if filters else '' }}" aria-label="To date" />
+  <button type="submit">Search</button>
+</form>
+
+{% if error %}
+<p class="error" role="alert">{{ error }}</p>
+{% endif %}
+
 {% if articles %}
 <ul class="list">
   {% for a in articles %}
-  <li><a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">{{ a['title'] }}</a>
-    <small class="muted">{{ a['category'] or '' }}</small></li>
+  <li>
+    <a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">{{ a['title'] or '(untitled)' }}</a>
+    <small class="muted">
+      {{ a['category'] or 'uncategorized' }}
+      {% if a['feed_title'] %} &middot; {{ a['feed_title'] }}{% endif %}
+      {% if a['published_at'] %} &middot; {{ a['published_at'] }}{% endif %}
+    </small>
+    {% if a['summary'] %}<br /><small>{{ a['summary'][:200] }}</small>{% endif %}
+  </li>
   {% endfor %}
 </ul>
 {% else %}
-<p class="muted">No articles found.</p>
+<p class="muted">No articles found{% if query %} matching "{{ query }}"{% endif %}. Try different keywords or clear the filters.</p>
 {% endif %}
 {% endblock %}
