@@ -1,0 +1,17 @@
+/* FeedOps foundation styles. Owner: Dhruv. */
+:root { --bg: #f7f7f8; --fg: #1a1a1a; --muted: #6b7280; --card: #ffffff; --accent: #2563eb; }
+body { margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); }
+.site-header { background: #111827; color: #fff; padding: 0.6rem 1rem; }
+.nav { display: flex; gap: 1rem; align-items: center; max-width: 960px; margin: 0 auto; }
+.nav a { color: #fff; text-decoration: none; }
+.nav a.brand { font-weight: 700; margin-right: auto; }
+.nav-search { display: flex; gap: 0.4rem; }
+.container { max-width: 960px; margin: 1.5rem auto; padding: 0 1rem; }
+.cards { display: flex; gap: 1rem; margin: 1rem 0; }
+.card { background: var(--card); border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem 1.5rem; display: flex; flex-direction: column; }
+.muted { color: var(--muted); }
+.list { background: var(--card); border: 1px solid #e5e7eb; border-radius: 8px; padding: 1rem; list-style: none; }
+.list li { padding: 0.4rem 0; border-bottom: 1px solid #f0f0f0; }
+.inline-form { display: flex; gap: 0.5rem; margin: 1rem 0; flex-wrap: wrap; }
+.error { color: #b91c1c; }
+.site-footer { text-align: center; padding: 2rem 0; color: var(--muted); }

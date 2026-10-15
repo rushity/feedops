@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - FeedOps{% endblock %}
+{% block content %}
+<h1>Feed Management Hub</h1>
+<p class="muted">Minimal working dashboard. Full intelligence features land in later milestones.</p>
+<section class="cards">
+  <div class="card"><strong>{{ feed_count }}</strong><span>Feeds</span></div>
+  <div class="card"><strong>{{ article_count }}</strong><span>Articles</span></div>
+</section>
+<h2>Recent articles</h2>
+{% if recent %}
+<ul class="list">
+  {% for a in recent %}
+  <li><a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">{{ a['title'] }}</a>
+    <small class="muted">{{ a['published_at'] or '' }}</small></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No articles yet. Add a feed under <a href="{{ url_for('feeds.feeds') }}">Feeds</a>.</p>
+{% endif %}
+{% endblock %}

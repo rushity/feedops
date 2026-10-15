@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Feeds - FeedOps{% endblock %}
+{% block content %}
+<h1>Feeds</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<form class="inline-form" method="post" action="{{ url_for('feeds.feeds') }}">
+  <input type="url" name="url" placeholder="https://example.com/rss" required />
+  <input type="text" name="title" placeholder="Optional title" />
+  <button type="submit">Add feed</button>
+</form>
+{% if feeds %}
+<ul class="list">
+  {% for f in feeds %}
+  <li><strong>{{ f['title'] }}</strong><br /><small class="muted">{{ f['url'] }}</small></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No feeds registered yet.</p>
+{% endif %}
+{% endblock %}

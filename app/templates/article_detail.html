@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Article - FeedOps{% endblock %}
+{% block content %}
+{% if article %}
+<h1>{{ article['title'] }}</h1>
+<p class="muted">{{ article['category'] or '' }} &middot; {{ article['published_at'] or '' }}</p>
+{% if article['url'] %}<p><a href="{{ article['url'] }}" target="_blank" rel="noopener">Open original</a></p>{% endif %}
+<p>{{ article['summary'] or 'No summary yet.' }}</p>
+{% else %}
+<h1>Article not found</h1>
+<p class="muted">The requested article does not exist.</p>
+{% endif %}
+<p><a href="{{ url_for('articles.article_list') }}">&larr; Back to articles</a></p>
+{% endblock %}

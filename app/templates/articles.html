@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Articles - FeedOps{% endblock %}
+{% block content %}
+<h1>Articles{% if query %} matching "{{ query }}"{% endif %}</h1>
+{% if articles %}
+<ul class="list">
+  {% for a in articles %}
+  <li><a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">{{ a['title'] }}</a>
+    <small class="muted">{{ a['category'] or '' }}</small></li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No articles found.</p>
+{% endif %}
+{% endblock %}

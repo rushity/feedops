@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}FeedOps{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav">
+      <a class="brand" href="{{ url_for('dashboard.index') }}">FeedOps</a>
+      <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
+      <a href="{{ url_for('feeds.feeds') }}">Feeds</a>
+      <a href="{{ url_for('articles.article_list') }}">Articles</a>
+      <form class="nav-search" action="{{ url_for('search.search') }}" method="get">
+        <input type="search" name="q" placeholder="Search articles..." value="{{ query | default('') }}" />
+        <button type="submit">Search</button>
+      </form>
+    </nav>
+  </header>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">
+    <small>FeedOps foundation &middot; <a href="/health">health</a></small>
+  </footer>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
