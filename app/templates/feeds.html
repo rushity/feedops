@@ -3,6 +3,7 @@
 {% block content %}
 <h1>Feeds</h1>
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if message %}<p class="success">{{ message }}</p>{% endif %}
 <form class="inline-form" method="post" action="{{ url_for('feeds.feeds') }}">
   <input type="url" name="url" placeholder="https://example.com/rss" required />
   <input type="text" name="title" placeholder="Optional title" />
@@ -11,7 +12,16 @@
 {% if feeds %}
 <ul class="list">
   {% for f in feeds %}
-  <li><strong>{{ f['title'] }}</strong><br /><small class="muted">{{ f['url'] }}</small></li>
+  <li><strong>{{ f['title'] }}</strong><br /><small class="muted">{{ f['url'] }}</small>
+    {# Refresh UI added by Rushit for ingestion milestone; per-feed status uses
+       additive feeds.last_fetch_status/last_fetched_at columns. #}
+    {% if 'last_fetch_status' in f.keys() and f['last_fetch_status'] %}
+    <br /><small class="muted">Status: {{ f['last_fetch_status'] }}{% if 'last_fetched_at' in f.keys() and f['last_fetched_at'] %} &middot; {{ f['last_fetched_at'] }}{% endif %}{% if 'last_error' in f.keys() and f['last_error'] and f['last_fetch_status'] == 'error' %} &middot; {{ f['last_error'] }}{% endif %}</small>
+    {% endif %}
+    <form method="post" action="{{ url_for('feeds.refresh_feed', feed_id=f['id']) }}" style="display:inline">
+      <button type="submit">Refresh</button>
+    </form>
+  </li>
   {% endfor %}
 </ul>
 {% else %}

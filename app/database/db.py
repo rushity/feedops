@@ -38,6 +38,37 @@ def init_db():
     schema_path = os.path.join(os.path.dirname(__file__), "schema.sql")
     with open(schema_path, encoding="utf-8") as f:
         db.executescript(f.read())
+    _ensure_feed_fetch_columns(db)
+
+
+def _ensure_feed_fetch_columns(db=None):
+    """Backward-compatible migration for pre-ingestion databases.
+
+    Fresh DBs already have the columns via schema.sql. Older local DBs
+    (created by foundation commit 3b69a75) only have id/url/title/created_at,
+    so add the ingestion columns if missing. Additive only - never drops data.
+    """
+    own = False
+    if db is None:
+        db = get_db()
+        own = False
+    try:
+        cols = {r["name"] for r in db.execute("PRAGMA table_info(feeds)")}
+    except Exception:
+        return
+    if not cols:
+        return
+    alters = []
+    if "last_fetched_at" not in cols:
+        alters.append("ALTER TABLE feeds ADD COLUMN last_fetched_at TIMESTAMP")
+    if "last_fetch_status" not in cols:
+        alters.append("ALTER TABLE feeds ADD COLUMN last_fetch_status TEXT")
+    if "last_error" not in cols:
+        alters.append("ALTER TABLE feeds ADD COLUMN last_error TEXT")
+    for sql in alters:
+        db.execute(sql)
+    if alters:
+        db.commit()
 
 
 def init_db_if_needed():
@@ -58,6 +89,9 @@ def init_db_if_needed():
             needs_init = True
     if needs_init:
         init_db()
+    else:
+        # Tables exist - still ensure ingestion columns for older DB files.
+        _ensure_feed_fetch_columns()
 
 
 @click.command("init-db")
