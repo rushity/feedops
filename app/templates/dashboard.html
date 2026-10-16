@@ -1,21 +1,293 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - FeedOps{% endblock %}
+
+{% block title %}Dashboard — FeedOps{% endblock %}
+
 {% block content %}
-<h1>Feed Management Hub</h1>
-<p class="muted">Minimal working dashboard. Full intelligence features land in later milestones.</p>
-<section class="cards">
-  <div class="card"><strong>{{ feed_count }}</strong><span>Feeds</span></div>
-  <div class="card"><strong>{{ article_count }}</strong><span>Articles</span></div>
-</section>
-<h2>Recent articles</h2>
-{% if recent %}
-<ul class="list">
-  {% for a in recent %}
-  <li><a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">{{ a['title'] }}</a>
-    <small class="muted">{{ a['published_at'] or '' }}</small></li>
-  {% endfor %}
-</ul>
-{% else %}
-<p class="muted">No articles yet. Add a feed under <a href="{{ url_for('feeds.feeds') }}">Feeds</a>.</p>
+<div class="page-header">
+  <div class="page-title-group">
+    <h1>Feed Management Hub</h1>
+    <p class="page-subtitle">Unified RSS/Atom ingestion status, metrics, and latest indexed articles.</p>
+  </div>
+  <div class="page-actions">
+    <a href="{{ url_for('feeds.feeds') }}" class="btn btn-primary btn-sm">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"></line>
+        <line x1="5" y1="12" x2="19" y2="12"></line>
+      </svg>
+      Add Feed
+    </a>
+  </div>
+</div>
+
+{% if error %}
+<div class="alert alert-error" role="alert">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <circle cx="12" cy="12" r="10"></circle>
+    <line x1="12" y1="8" x2="12" y2="12"></line>
+    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+  </svg>
+  <span>{{ error }}</span>
+  <button type="button" class="alert-dismiss" aria-label="Dismiss">&times;</button>
+</div>
 {% endif %}
+
+<!-- Metrics & Feed Health KPI Cards -->
+<section class="cards kpi-grid" aria-label="Key Performance Indicators">
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Total Feeds</span>
+      <div class="stat-icon stat-icon-primary" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M4 11a9 9 0 0 1 9 9"></path>
+          <path d="M4 4a16 16 0 0 1 16 16"></path>
+          <circle cx="5" cy="19" r="1" fill="currentColor"></circle>
+        </svg>
+      </div>
+    </div>
+    <div class="stat-value"><strong>{{ feed_count }}</strong></div>
+    <div class="stat-caption">Registered sources</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Indexed Articles</span>
+      <div class="stat-icon stat-icon-info" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+        </svg>
+      </div>
+    </div>
+    <div class="stat-value"><strong>{{ article_count }}</strong></div>
+    <div class="stat-caption">Ingested from feeds</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Healthy Feeds</span>
+      <div class="stat-icon stat-icon-success" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+      </div>
+    </div>
+    <div class="stat-value">
+      <strong class="text-success">{{ healthy_feeds }}</strong>
+      {% if feed_count > 0 %}
+        <span class="stat-subtext">/ {{ feed_count }}</span>
+      {% endif %}
+    </div>
+    <div class="stat-caption">Last fetch successful</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Ingestion Errors</span>
+      <div class="stat-icon stat-icon-danger" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <line x1="12" y1="8" x2="12" y2="12"></line>
+          <line x1="12" y1="16" x2="12.01" y2="16"></line>
+        </svg>
+      </div>
+    </div>
+    <div class="stat-value">
+      <strong class="{% if error_feeds > 0 %}text-danger{% else %}text-muted{% endif %}">{{ error_feeds }}</strong>
+    </div>
+    <div class="stat-caption">Feeds with fetch errors</div>
+  </div>
+
+  <div class="card stat-card">
+    <div class="stat-header">
+      <span class="stat-label">Latest Sync</span>
+      <div class="stat-icon stat-icon-neutral" aria-hidden="true">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+      </div>
+    </div>
+    <div class="stat-value stat-value-sm">
+      {% if latest_sync %}
+        <time datetime="{{ latest_sync }}" data-timestamp="{{ latest_sync }}" title="{{ latest_sync }}">
+          {{ latest_sync[:10] }}
+        </time>
+      {% elif feed_count > 0 %}
+        <span class="text-muted">Pending sync</span>
+      {% else %}
+        <span class="text-muted">No feeds</span>
+      {% endif %}
+    </div>
+    <div class="stat-caption">Last recorded fetch</div>
+  </div>
+</section>
+
+<!-- Dashboard Main Content Grid -->
+<div class="dashboard-grid">
+  <!-- Main Stream: Recent Articles -->
+  <section class="card content-card" aria-labelledby="recent-articles-heading">
+    <div class="card-header flex-between">
+      <h2 class="card-title" id="recent-articles-heading">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <line x1="8" y1="6" x2="21" y2="6"></line>
+          <line x1="8" y1="12" x2="21" y2="12"></line>
+          <line x1="8" y1="18" x2="21" y2="18"></line>
+          <line x1="3" y1="6" x2="3.01" y2="6"></line>
+          <line x1="3" y1="12" x2="3.01" y2="12"></line>
+          <line x1="3" y1="18" x2="3.01" y2="18"></line>
+        </svg>
+        Recent Articles
+      </h2>
+      {% if recent %}
+        <a href="{{ url_for('articles.article_list') }}" class="btn btn-secondary btn-sm">View All ({{ article_count }})</a>
+      {% endif %}
+    </div>
+
+    {% if recent %}
+      <div class="article-list-container">
+        <ul class="article-list" role="list">
+          {% for a in recent %}
+            <li class="article-item">
+              <div class="article-main">
+                <h3 class="article-title">
+                  <a href="{{ url_for('articles.article_detail', article_id=a['id']) }}">
+                    {{ a['title'] or '(untitled)' }}
+                  </a>
+                </h3>
+                <div class="article-meta">
+                  {% if a['feed_title'] %}
+                    <span class="article-source">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <path d="M4 11a9 9 0 0 1 9 9"></path>
+                        <path d="M4 4a16 16 0 0 1 16 16"></path>
+                        <circle cx="5" cy="19" r="1" fill="currentColor"></circle>
+                      </svg>
+                      {{ a['feed_title'] }}
+                    </span>
+                    <span class="meta-separator">&middot;</span>
+                  {% endif %}
+                  {% if a['published_at'] %}
+                    <time datetime="{{ a['published_at'] }}" data-timestamp="{{ a['published_at'] }}" title="{{ a['published_at'] }}" class="article-date">
+                      {{ a['published_at'][:10] }}
+                    </time>
+                    <span class="meta-separator">&middot;</span>
+                  {% endif %}
+                  <span class="badge badge-category">{{ a['category'] or 'uncategorized' }}</span>
+                </div>
+                {% if a['summary'] %}
+                  <p class="article-snippet">{{ a['summary'][:220] }}{% if a['summary']|length > 220 %}...{% endif %}</p>
+                {% endif %}
+              </div>
+              {% if a['url'] %}
+                <div class="article-action">
+                  <a href="{{ a['url'] }}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-xs" title="Open original article source">
+                    Source
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                </div>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon" aria-hidden="true">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+          </svg>
+        </div>
+        <h3 class="empty-title">No articles collected yet</h3>
+        <p class="empty-description">
+          No articles yet. Add a feed under <a href="{{ url_for('feeds.feeds') }}">Feeds</a>.
+        </p>
+        <a href="{{ url_for('feeds.feeds') }}" class="btn btn-primary btn-sm">
+          Configure Feeds
+        </a>
+      </div>
+    {% endif %}
+  </section>
+
+  <!-- Sidebar: Feed Health Status & Topics -->
+  <aside class="dashboard-sidebar">
+    <!-- Feeds Health Overview -->
+    <section class="card content-card" aria-labelledby="feeds-health-heading">
+      <div class="card-header flex-between">
+        <h2 class="card-title" id="feeds-health-heading">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+          Feeds Health
+        </h2>
+        <a href="{{ url_for('feeds.feeds') }}" class="btn btn-secondary btn-xs">Manage</a>
+      </div>
+
+      {% if feeds %}
+        <div class="feed-status-list">
+          {% for f in feeds %}
+            <div class="feed-status-item">
+              <div class="feed-info">
+                <span class="feed-name" title="{{ f['title'] or f['url'] }}">{{ f['title'] or 'Untitled Feed' }}</span>
+                <span class="feed-url-snippet" title="{{ f['url'] }}">{{ f['url'] }}</span>
+              </div>
+              <div class="feed-badge-wrap">
+                {% if f['last_fetch_status'] == 'ok' %}
+                  <span class="badge badge-ok" title="Last fetch succeeded">
+                    <span class="badge-dot"></span> Active
+                  </span>
+                {% elif f['last_fetch_status'] == 'error' %}
+                  <span class="badge badge-error" title="{{ f['last_error'] or 'Fetch failed' }}">
+                    <span class="badge-dot"></span> Error
+                  </span>
+                {% else %}
+                  <span class="badge badge-pending" title="Not yet synchronized">
+                    <span class="badge-dot"></span> Pending
+                  </span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state empty-state-compact">
+          <p class="empty-description">No feeds configured in system.</p>
+          <a href="{{ url_for('feeds.feeds') }}" class="btn btn-secondary btn-xs">Add Feed</a>
+        </div>
+      {% endif %}
+    </section>
+
+    <!-- Active Topics / Categories -->
+    {% if categories %}
+      <section class="card content-card" aria-labelledby="topics-heading">
+        <div class="card-header">
+          <h2 class="card-title" id="topics-heading">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path>
+              <line x1="7" y1="7" x2="7.01" y2="7"></line>
+            </svg>
+            Active Categories
+          </h2>
+        </div>
+        <div class="category-cloud">
+          {% for c in categories %}
+            <a href="{{ url_for('articles.article_list') }}?category={{ c['category'] }}" class="category-pill">
+              <span class="category-name">{{ c['category'] }}</span>
+              <span class="category-count">{{ c['count'] }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  </aside>
+</div>
 {% endblock %}
