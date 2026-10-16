@@ -36,3 +36,4 @@ pytest -q
 - `tests/` — health, dashboard, feeds, search, db
 
 See `CONTRIBUTING.md` for ownership and Git workflow.
+See `docs/ai-groq.md` for Groq AI setup and `docs/feed-ingestion.md` for RSS/Atom ingestion.

@@ -13,11 +13,17 @@ Behaviour:
 - Offline fallback (extractive summary, keyword topics, lexicon sentiment)
   always works with no keys and no network, so article reading and search
   keep working when AI is unavailable.
-- Remote analysis uses an OpenAI-compatible chat-completions endpoint via
-  the standard library only (no new dependencies). Config comes ONLY from
-  environment variables — never hardcoded:
-    FEEDOPS_AI_ENABLED, FEEDOPS_AI_API_KEY (or OPENAI_API_KEY),
-    FEEDOPS_AI_MODEL, FEEDOPS_AI_BASE_URL, FEEDOPS_AI_TIMEOUT
+- Remote analysis uses Groq's OpenAI-compatible chat-completions endpoint
+  (`https://api.groq.com/openai/v1`) via the standard library only (no new
+  dependencies). Config comes ONLY from environment variables — never
+  hardcoded:
+    GROQ_API_KEY (secret), GROQ_MODEL, GROQ_BASE_URL, GROQ_TIMEOUT,
+    FEEDOPS_AI_ENABLED.
+  Legacy names still work as fallbacks: FEEDOPS_AI_API_KEY / OPENAI_API_KEY
+  for the key, FEEDOPS_AI_MODEL for the model, FEEDOPS_AI_BASE_URL /
+  FEEDOPS_AI_TIMEOUT for endpoint/timeout. An explicitly configured base URL
+  is always honoured; otherwise Groq's endpoint is the default whenever Groq
+  variables are present.
 - `article` may be a sqlite3.Row, a dict, or an object with
   title/summary(/content) attributes — the shared schema has title, url,
   summary, category, published_at (no content column; missing fields are
@@ -34,6 +40,13 @@ import urllib.error
 import urllib.request
 
 log = logging.getLogger(__name__)
+
+# Groq official OpenAI-compatible endpoint and the default free-tier model.
+# Verified against https://console.groq.com/docs/models (Production models).
+# Groq's free-tier availability and limits can change; GROQ_MODEL overrides this.
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+DEFAULT_GROQ_MODEL = "llama-3.3-70b-versatile"
+LEGACY_OPENAI_BASE_URL = "https://api.openai.com/v1"
 
 ALLOWED_SENTIMENTS = ("positive", "neutral", "negative")
 
@@ -97,22 +110,43 @@ def categorize(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 def ai_config():
+    """Resolve AI configuration from environment only. Never logs the key."""
     enabled = os.environ.get("FEEDOPS_AI_ENABLED", "true").lower() in (
         "1", "true", "yes", "on",
     )
-    api_key = os.environ.get("FEEDOPS_AI_API_KEY") or os.environ.get("OPENAI_API_KEY")
+    api_key = (
+        os.environ.get("GROQ_API_KEY")
+        or os.environ.get("FEEDOPS_AI_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+    )
+    model = (
+        os.environ.get("GROQ_MODEL")
+        or os.environ.get("FEEDOPS_AI_MODEL")
+        or DEFAULT_GROQ_MODEL
+    )
+    explicit_base_url = (
+        os.environ.get("GROQ_BASE_URL")
+        or os.environ.get("FEEDOPS_AI_BASE_URL")
+    )
+    if explicit_base_url:
+        base_url = explicit_base_url.rstrip("/")
+    elif os.environ.get("GROQ_API_KEY") or os.environ.get("GROQ_MODEL"):
+        base_url = GROQ_BASE_URL
+    else:
+        # Backward compatibility for deployments already pointing elsewhere.
+        base_url = LEGACY_OPENAI_BASE_URL
     try:
-        timeout = float(os.environ.get("FEEDOPS_AI_TIMEOUT", "15"))
+        timeout = float(os.environ.get("GROQ_TIMEOUT") or os.environ.get("FEEDOPS_AI_TIMEOUT", "15"))
     except ValueError:
         timeout = 15.0
+    provider = "groq" if base_url == GROQ_BASE_URL else "remote"
     return {
         "enabled": enabled,
         "api_key": api_key,
-        "model": os.environ.get("FEEDOPS_AI_MODEL", "gpt-4o-mini"),
-        "base_url": os.environ.get(
-            "FEEDOPS_AI_BASE_URL", "https://api.openai.com/v1"
-        ).rstrip("/"),
+        "model": model,
+        "base_url": base_url,
         "timeout": timeout,
+        "provider": provider,
     }
 
 
@@ -245,7 +279,11 @@ def validate_analysis(result):
 # ---------------------------------------------------------------------------
 
 def _call_remote_ai(text, cfg):
-    """POST to an OpenAI-compatible chat-completions endpoint. Raises on failure."""
+    """POST to the configured chat-completions endpoint (Groq by default).
+
+    Sends only the article text (truncated) plus the JSON contract prompt —
+    never secrets, config, or unrelated database content. Raises on failure.
+    """
     payload = {
         "model": cfg["model"],
         "messages": [
@@ -317,7 +355,7 @@ def analyze_article(article, query=None):
             if "topics" not in raw and isinstance(raw.get("category"), str):
                 raw["topics"] = [raw["category"]]
             cleaned, errors = validate_analysis(raw)
-            cleaned.update({"provider": "remote", "fallback_used": False,
+            cleaned.update({"provider": cfg["provider"], "fallback_used": False,
                             "model": cfg["model"], "validated": True, "errors": errors})
             if errors and not cleaned.get("summary"):
                 fb = fallback_analysis(article, query)
