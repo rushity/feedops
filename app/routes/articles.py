@@ -1,29 +1,93 @@
-"""Article routes. Owner: Rushik (minimal foundation; full UI in milestone 2)."""
-from flask import Blueprint, render_template
+"""Article routes. Owner: Rushik."""
+from flask import Blueprint, render_template, request
 
 from app.database.db import get_db
+from app.services import ai_service
+from app.services.search_service import get_filter_options, search_articles
 
 articles_bp = Blueprint("articles", __name__, url_prefix="/articles")
+
+_LIST_SQL = (
+    "SELECT a.id, a.feed_id, a.title, a.url, a.summary, a.category, "
+    "a.published_at, a.created_at, "
+    "f.title AS feed_title, f.url AS feed_url "
+    "FROM articles a LEFT JOIN feeds f ON a.feed_id = f.id "
+    "ORDER BY a.id DESC LIMIT 50"
+)
+
+_DETAIL_SQL = (
+    "SELECT a.id, a.feed_id, a.title, a.url, a.summary, a.category, "
+    "a.published_at, a.created_at, "
+    "f.title AS feed_title, f.url AS feed_url "
+    "FROM articles a LEFT JOIN feeds f ON a.feed_id = f.id "
+    "WHERE a.id = ?"
+)
+
+
+def _filters_from_args(args):
+    return {
+        "q": (args.get("q", "") or "").strip(),
+        "source": (args.get("source", "") or "").strip(),
+        "category": (args.get("category", "") or "").strip(),
+        "date_from": (args.get("date_from", "") or "").strip(),
+        "date_to": (args.get("date_to", "") or "").strip(),
+    }
 
 
 @articles_bp.route("/")
 def article_list():
+    """List recent articles; applies q/source/category/date filters when given."""
+    filters = _filters_from_args(request.args)
     db = get_db()
-    articles = db.execute(
-        "SELECT id, feed_id, title, url, summary, category, published_at "
-        "FROM articles ORDER BY id DESC LIMIT 50"
-    ).fetchall()
-    return render_template("articles.html", articles=articles)
+    error = None
+    try:
+        if any(filters.values()):
+            articles = search_articles(
+                db,
+                filters["q"],
+                limit=50,
+                source=filters["source"] or None,
+                category=filters["category"] or None,
+                date_from=filters["date_from"] or None,
+                date_to=filters["date_to"] or None,
+            )
+        else:
+            articles = db.execute(_LIST_SQL).fetchall()
+        options = get_filter_options(db)
+    except Exception as exc:
+        articles, options = [], {"sources": [], "categories": []}
+        error = f"Could not load articles: {exc}"
+    return render_template(
+        "articles.html",
+        articles=articles,
+        query=filters["q"],
+        filters=filters,
+        options=options,
+        error=error,
+    )
 
 
 @articles_bp.route("/<int:article_id>")
 def article_detail(article_id: int):
+    """Detail page with original-source link and on-demand AI analysis."""
     db = get_db()
-    article = db.execute(
-        "SELECT id, feed_id, title, url, summary, category, published_at "
-        "FROM articles WHERE id = ?",
-        (article_id,),
-    ).fetchone()
+    article = db.execute(_DETAIL_SQL, (article_id,)).fetchone()
     if article is None:
         return render_template("article_detail.html", article=None), 404
-    return render_template("article_detail.html", article=article)
+
+    analysis, analysis_error = None, None
+    if request.args.get("analyze") == "1":
+        # No DB write: the shared schema has no AI columns, so analysis is
+        # computed on demand and displayed only.
+        try:
+            analysis = ai_service.analyze_article(dict(article))
+        except Exception as exc:  # never break reading
+            analysis_error = f"AI analysis unavailable: {exc}"
+
+    return render_template(
+        "article_detail.html",
+        article=article,
+        analysis=analysis,
+        analysis_error=analysis_error,
+        ai_available=ai_service.is_ai_available(),
+    )
