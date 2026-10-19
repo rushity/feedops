@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}My Preferences & Consent — FeedOps Discovery{% endblock %}
+
+{% block content %}
+<div style="max-width: 720px; margin: 1.5rem auto;">
+  <div class="card" style="padding: 2rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Consumer Preferences & Personalization</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Customize your feed signals. We use these preferences to rank discovery recommendations and verify budget bounds.
+    </p>
+
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+        <span>{{ error }}</span>
+      </div>
+    {% endif %}
+    {% if message %}
+      <div class="alert alert-ok" style="margin-bottom: 1.25rem;">
+        <span>{{ message }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('auth.preferences') }}">
+      <!-- Interests -->
+      <div style="margin-bottom: 1.75rem;">
+        <label style="display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.5rem;">Product Interests</label>
+        <p style="font-size: 0.85rem; color: var(--fg-muted); margin-bottom: 0.75rem;">Select categories you are actively shopping for or interested in discovering:</p>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;">
+          {% for slug, name in available_interests %}
+            <label style="display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.8rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+              <input type="checkbox" name="interests" value="{{ slug }}" {% if slug in prefs.interests %}checked{% endif %} />
+              <span>{{ name }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Budget Band -->
+      <div style="margin-bottom: 1.75rem; background: var(--bg); padding: 1.25rem; border-radius: 6px; border: 1px solid var(--border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
+          <label style="font-weight: 700; font-size: 1.05rem; margin: 0;">Target Budget Range</label>
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <label for="currency" style="font-size: 0.85rem; font-weight: 600; color: var(--fg-muted);">Currency:</label>
+            <select id="currency" name="currency" class="input" style="padding: 0.3rem 0.6rem; font-size: 0.85rem;">
+              <option value="INR" {% if prefs.currency == 'INR' or not prefs.currency %}selected{% endif %}>INR (₹)</option>
+              <option value="USD" {% if prefs.currency == 'USD' %}selected{% endif %}>USD ($)</option>
+              <option value="EUR" {% if prefs.currency == 'EUR' %}selected{% endif %}>EUR (€)</option>
+              <option value="GBP" {% if prefs.currency == 'GBP' %}selected{% endif %}>GBP (£)</option>
+            </select>
+          </div>
+        </div>
+        <p style="font-size: 0.85rem; color: var(--fg-muted); margin-bottom: 0.75rem;">Feed recommendations will prioritize products within this range:</p>
+        
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <div style="flex: 1;">
+            <label for="budget_min" style="display: block; font-size: 0.85rem; margin-bottom: 0.25rem; font-weight: 600;">Minimum</label>
+            <input type="number" id="budget_min" name="budget_min" class="input" style="width: 100%; padding: 0.5rem;" value="{{ prefs.budget_min | int if prefs.budget_min is defined and prefs.budget_min == prefs.budget_min | int else prefs.budget_min | default(0) }}" min="0" step="any" placeholder="0" />
+          </div>
+          <span style="margin-top: 1.2rem; color: var(--fg-muted);">to</span>
+          <div style="flex: 1;">
+            <label for="budget_max" style="display: block; font-size: 0.85rem; margin-bottom: 0.25rem; font-weight: 600;">Maximum</label>
+            <input type="number" id="budget_max" name="budget_max" class="input" style="width: 100%; padding: 0.5rem;" value="{{ prefs.budget_max | int if prefs.budget_max is defined and prefs.budget_max == prefs.budget_max | int else prefs.budget_max | default(50000) }}" min="0" step="any" placeholder="50000" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Preferred Brands -->
+      <div style="margin-bottom: 1.75rem;">
+        <label for="preferred_brands" style="display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 0.25rem;">Preferred Brands</label>
+        <p style="font-size: 0.85rem; color: var(--fg-muted); margin-bottom: 0.5rem;">Comma-separated brands you follow (e.g. Sony, Apple, Nike, Dyson):</p>
+        <input type="text" id="preferred_brands" name="preferred_brands" class="input" style="width: 100%; padding: 0.6rem;" value="{{ prefs.preferred_brands | join(', ') if prefs.preferred_brands is iterable and prefs.preferred_brands is not string else prefs.preferred_brands | default('') }}" placeholder="Sony, Apple, Samsung" />
+      </div>
+
+
+      <!-- Consent Choices -->
+      <div style="margin-bottom: 2rem; border-top: 1px solid var(--border); padding-top: 1.25rem;">
+        <h3 style="font-weight: 700; font-size: 1.05rem; margin-bottom: 0.5rem;">Granular Privacy & Consent Controls</h3>
+        <p style="font-size: 0.85rem; color: var(--fg-muted); margin-bottom: 0.75rem;">You can grant or withdraw individual permissions at any time:</p>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.6rem; margin-bottom: 0.75rem; font-size: 0.9rem; cursor: pointer;">
+          <input type="checkbox" name="consent_personalization" value="1" {% if consents.get('personalization', True) %}checked{% endif %} style="margin-top: 0.2rem;" />
+          <span><strong>Personalized Feed:</strong> Permit ranking algorithms to score products using your selected interests, clicks, and shortlist.</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.9rem; cursor: pointer;">
+          <input type="checkbox" name="consent_marketing" value="1" {% if consents.get('marketing', False) %}checked{% endif %} style="margin-top: 0.2rem;" />
+          <span><strong>Deal Alerts:</strong> Receive notifications when products in your saved list drop in price.</span>
+        </label>
+      </div>
+
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-weight: 600;">
+          Save Preferences
+        </button>
+        <a href="{{ url_for('consumer.discover') }}" class="btn btn-secondary">Back to Discovery Feed</a>
+        <a href="{{ url_for('privacy.export_data') }}" style="margin-left: auto; font-size: 0.85rem; color: var(--primary);" title="Export all personal data in JSON format">Download My Data</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

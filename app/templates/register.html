@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Register — FeedOps Personal AI Discovery{% endblock %}
+
+{% block content %}
+<div style="max-width: 540px; margin: 2rem auto;">
+  <div class="card" style="padding: 2rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Create Your Account</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Join FeedOps to get your personalized AI product discovery feed, price drop alerts, and curated recommendations.
+    </p>
+
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+        <span>{{ error }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('auth.register') }}">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="email" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Email Address *</label>
+        <input type="email" id="email" name="email" class="input" style="width: 100%; padding: 0.6rem;" required placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="display_name" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Display Name</label>
+        <input type="text" id="display_name" name="display_name" class="input" style="width: 100%; padding: 0.6rem;" placeholder="e.g. Alex" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="password" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Password * (min 6 characters)</label>
+        <input type="password" id="password" name="password" class="input" style="width: 100%; padding: 0.6rem;" required />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="confirm_password" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Confirm Password *</label>
+        <input type="password" id="confirm_password" name="confirm_password" class="input" style="width: 100%; padding: 0.6rem;" required />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.25rem;">
+        <label for="role" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Account Purpose</label>
+        <select id="role" name="role" class="input" style="width: 100%; padding: 0.6rem;">
+          <option value="consumer" {% if request.args.get('role') != 'merchant' %}selected{% endif %}>Consumer — Discover products, track prices & deals</option>
+          <option value="merchant" {% if request.args.get('role') == 'merchant' %}selected{% endif %}>Merchant / Brand — Submit catalogue feeds & promote offers</option>
+        </select>
+      </div>
+
+      <!-- Eligibility & Consent Section (Product Requirement Section 5) -->
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem;">Eligibility & Privacy Choices</h3>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.9rem; cursor: pointer;">
+          <input type="checkbox" name="age_confirmed" value="1" required style="margin-top: 0.2rem;" />
+          <span><strong>Age Declaration:</strong> I confirm I am 18 years of age or older. (Required for eligibility)</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.75rem; font-size: 0.9rem; cursor: pointer;">
+          <input type="checkbox" name="terms_accepted" value="1" required style="margin-top: 0.2rem;" />
+          <span>I accept the <a href="#" style="text-decoration: underline;">Terms of Service</a> and <a href="#" style="text-decoration: underline;">Privacy Policy</a>.</span>
+        </label>
+
+        <hr style="border: none; border-top: 1px solid var(--border); margin: 0.75rem 0;" />
+
+        <p style="font-size: 0.85rem; color: var(--fg-muted); margin-bottom: 0.5rem;">Optional Permissions (separate opt-in):</p>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; margin-bottom: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+          <input type="checkbox" name="consent_personalization" value="1" checked style="margin-top: 0.2rem;" />
+          <span>Allow personalized AI feed ranking based on selected interests and browsing.</span>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+          <input type="checkbox" name="consent_marketing" value="1" style="margin-top: 0.2rem;" />
+          <span>Receive occasional email deal digests and price-drop alerts.</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 600;">
+        Complete Registration
+      </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--fg-muted);">
+      Already have an account? <a href="{{ url_for('auth.login') }}" style="color: var(--primary); font-weight: 600;">Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

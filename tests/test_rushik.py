@@ -218,3 +218,32 @@ def test_search_page_filters(client, seeded_app):
     assert b"AI breakthrough" in res.data
     empty = client.get("/search/?q=no-such-thing-xyz")
     assert b"No articles found" in empty.data
+
+
+def test_article_list_pagination(client, app):
+    # Insert 25 articles into the database to trigger multi-page pagination (per_page=20)
+    with app.app_context():
+        db = get_db()
+        cur = db.execute("INSERT INTO feeds (url, title) VALUES (?, ?)", ("https://paging.test/rss", "PagingFeed"))
+        fid = cur.lastrowid
+        for i in range(1, 26):
+            db.execute(
+                "INSERT INTO articles (feed_id, title, url, summary) VALUES (?, ?, ?, ?)",
+                (fid, f"Article {i:02d}", f"https://paging.test/art-{i}", f"Summary for {i}")
+            )
+        db.commit()
+
+    # Page 1
+    res1 = client.get("/articles/?page=1")
+    assert res1.status_code == 200
+    assert b"Page 1 of 2" in res1.data
+    assert b"Next" in res1.data
+    assert b"Article 25" in res1.data  # Descending order, top of page 1
+
+    # Page 2
+    res2 = client.get("/articles/?page=2")
+    assert res2.status_code == 200
+    assert b"Page 2 of 2" in res2.data
+    assert b"Previous" in res2.data
+    assert b"Article 01" in res2.data  # Oldest, at bottom on page 2
+

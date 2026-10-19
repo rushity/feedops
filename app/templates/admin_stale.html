@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Stale Catalogue Monitoring — FeedOps Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Stale Catalogue & Price Freshness Monitoring</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Products not updated by partner feeds in over 30 days. Outdated prices or stale availability should be refreshed.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">&larr; Admin Console</a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">ID</th>
+          <th style="padding: 0.75rem 1rem;">Product</th>
+          <th style="padding: 0.75rem 1rem;">Partner</th>
+          <th style="padding: 0.75rem 1rem;">Price</th>
+          <th style="padding: 0.75rem 1rem;">Last Updated</th>
+          <th style="padding: 0.75rem 1rem;">Freshness Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if stale_products %}
+          {% for p in stale_products %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ p.id }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <div style="font-weight: 700;">{{ p.title }}</div>
+                <div style="font-size: 0.75rem; color: var(--fg-muted);">SKU: {{ p.sku }}</div>
+              </td>
+              <td style="padding: 0.75rem 1rem;">{{ p.partner_name or 'Direct' }}</td>
+              <td style="padding: 0.75rem 1rem; font-weight: 700;">${{ "{:,.2f}".format(p.price) }}</td>
+              <td style="padding: 0.75rem 1rem; color: #dc2626; font-size: 0.85rem;">
+                {{ p.last_updated_at }}
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge badge-warning">Stale (&gt; 30d)</span>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="padding: 3rem 1rem; text-align: center; color: #059669; font-weight: 600;">
+              ✓ All active products are fresh and updated within the 30-day threshold.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

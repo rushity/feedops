@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Product Moderation — FeedOps Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Product Moderation Queue</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Review catalogue items, verify accurate claims, and suppress prohibited or misleading products.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">&larr; Admin Console</a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">ID</th>
+          <th style="padding: 0.75rem 1rem;">Product</th>
+          <th style="padding: 0.75rem 1rem;">Category</th>
+          <th style="padding: 0.75rem 1rem;">Price</th>
+          <th style="padding: 0.75rem 1rem;">Partner</th>
+          <th style="padding: 0.75rem 1rem;">Status</th>
+          <th style="padding: 0.75rem 1rem;">Moderation Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if products %}
+          {% for p in products %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ p.id }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <div style="font-weight: 700;">{{ p.title }}</div>
+                <div style="font-size: 0.75rem; color: var(--fg-muted);">SKU: {{ p.sku }} &middot; {{ p.brand or 'No brand' }}</div>
+              </td>
+              <td style="padding: 0.75rem 1rem; text-transform: capitalize;">{{ p.category }}</td>
+              <td style="padding: 0.75rem 1rem; font-weight: 700;">${{ "{:,.2f}".format(p.price) }}</td>
+              <td style="padding: 0.75rem 1rem;">{{ p.partner_name or 'Direct' }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge {% if p.moderation_status == 'approved' %}badge-ok{% elif p.moderation_status == 'pending' %}badge-warning{% else %}badge-error{% endif %}">
+                  {{ p.moderation_status }}
+                </span>
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <form method="post" action="{{ url_for('admin.moderate_product', product_id=p.id) }}" style="display: flex; gap: 0.4rem;">
+                  {% if p.moderation_status != 'approved' %}
+                    <button type="submit" name="status" value="approved" class="btn btn-sm btn-primary">Approve</button>
+                  {% endif %}
+                  {% if p.moderation_status != 'rejected' %}
+                    <button type="submit" name="status" value="rejected" class="btn btn-sm btn-secondary" style="color: #dc2626;">Reject</button>
+                  {% endif %}
+                  <a href="{{ url_for('consumer.product_detail', product_id=p.id) }}" target="_blank" class="btn btn-sm btn-secondary">Inspect</a>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="padding: 3rem 1rem; text-align: center; color: var(--fg-muted);">
+              No products found in moderation queue.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

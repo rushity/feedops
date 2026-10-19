@@ -40,6 +40,19 @@
   </li>
   {% endfor %}
 </ul>
+{% if pagination and pagination.total_pages > 1 %}
+<nav class="pagination" aria-label="Article pagination">
+  {% if pagination.has_prev %}
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('articles.article_list', page=pagination.prev_page, q=filters.q if filters else '', source=filters.source if filters else '', category=filters.category if filters else '', date_from=filters.date_from if filters else '', date_to=filters.date_to if filters else '') }}">&laquo; Previous</a>
+  {% endif %}
+
+  <span class="pagination-info">Page {{ pagination.page }} of {{ pagination.total_pages }} ({{ pagination.total }} total)</span>
+
+  {% if pagination.has_next %}
+  <a class="btn btn-secondary btn-sm" href="{{ url_for('articles.article_list', page=pagination.next_page, q=filters.q if filters else '', source=filters.source if filters else '', category=filters.category if filters else '', date_from=filters.date_from if filters else '', date_to=filters.date_to if filters else '') }}">Next &raquo;</a>
+  {% endif %}
+</nav>
+{% endif %}
 {% else %}
 <p class="muted">No articles found{% if query %} matching "{{ query }}"{% endif %}. Try different keywords or clear the filters.</p>
 {% endif %}

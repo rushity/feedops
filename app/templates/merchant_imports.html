@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Import History & Error Reports — FeedOps Merchant{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Catalogue Ingestion History</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Audit trail of batch CSV and feed uploads, items imported, and error diagnostics.
+      </p>
+    </div>
+    <a href="{{ url_for('merchant.upload') }}" class="btn btn-primary" style="font-size: 0.85rem;">
+      + Ingest New Catalogue
+    </a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">Batch ID</th>
+          <th style="padding: 0.75rem 1rem;">Source / File</th>
+          <th style="padding: 0.75rem 1rem;">Status</th>
+          <th style="padding: 0.75rem 1rem;">Items Imported</th>
+          <th style="padding: 0.75rem 1rem;">Items Skipped</th>
+          <th style="padding: 0.75rem 1rem;">Timestamp</th>
+          <th style="padding: 0.75rem 1rem;">Diagnostic Log</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if jobs %}
+          {% for j in jobs %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ j.id }}</td>
+              <td style="padding: 0.75rem 1rem; font-weight: 600;">{{ j.filename }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge {% if j.status == 'completed' %}badge-ok{% elif j.status == 'partial' %}badge-warning{% else %}badge-error{% endif %}">
+                  {{ j.status.title() }}
+                </span>
+              </td>
+              <td style="padding: 0.75rem 1rem; color: #059669; font-weight: 700;">{{ j.items_imported }}</td>
+              <td style="padding: 0.75rem 1rem; color: #dc2626; font-weight: 700;">{{ j.items_skipped }}</td>
+              <td style="padding: 0.75rem 1rem; color: var(--fg-muted); font-size: 0.8rem;">{{ j.created_at }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                {% if j.error_log %}
+                  <details style="font-size: 0.8rem;">
+                    <summary style="cursor: pointer; color: var(--primary);">View Errors</summary>
+                    <pre style="background: var(--bg); padding: 0.5rem; border-radius: 4px; max-height: 120px; overflow-y: auto; margin-top: 0.25rem;">{{ j.error_log }}</pre>
+                  </details>
+                {% else %}
+                  <span style="color: #059669; font-size: 0.8rem;">Clean (0 errors)</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="padding: 3rem 1rem; text-align: center; color: var(--fg-muted);">
+              No import history records found.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

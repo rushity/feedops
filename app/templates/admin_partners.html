@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Partner Review & Onboarding — FeedOps Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Partner Application Review</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Validate partner identity, website legitimacy, and approve or reject catalogue ingestion access.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">&larr; Admin Console</a>
+  </div>
+
+  <!-- Status Filter Tabs -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; font-size: 0.85rem;">
+    <a href="{{ url_for('admin.partners') }}" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-secondary{% endif %}">All</a>
+    <a href="{{ url_for('admin.partners', status='submitted') }}" class="btn btn-sm {% if status_filter == 'submitted' %}btn-primary{% else %}btn-secondary{% endif %}">Pending Review</a>
+    <a href="{{ url_for('admin.partners', status='approved') }}" class="btn btn-sm {% if status_filter == 'approved' %}btn-primary{% else %}btn-secondary{% endif %}">Approved</a>
+    <a href="{{ url_for('admin.partners', status='rejected') }}" class="btn btn-sm {% if status_filter == 'rejected' %}btn-primary{% else %}btn-secondary{% endif %}">Rejected</a>
+    <a href="{{ url_for('admin.partners', status='suspended') }}" class="btn btn-sm {% if status_filter == 'suspended' %}btn-primary{% else %}btn-secondary{% endif %}">Suspended</a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">ID</th>
+          <th style="padding: 0.75rem 1rem;">Business Name</th>
+          <th style="padding: 0.75rem 1rem;">Website</th>
+          <th style="padding: 0.75rem 1rem;">Contact</th>
+          <th style="padding: 0.75rem 1rem;">Type</th>
+          <th style="padding: 0.75rem 1rem;">Status</th>
+          <th style="padding: 0.75rem 1rem;">Decision Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if partners %}
+          {% for p in partners %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ p.id }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <div style="font-weight: 700;">{{ p.business_name }}</div>
+                <span style="font-size: 0.75rem; color: var(--fg-muted);">{{ p.category or 'General' }}</span>
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <a href="{{ p.website }}" target="_blank" rel="noopener noreferrer" style="color: var(--primary);">{{ p.website }}</a>
+              </td>
+              <td style="padding: 0.75rem 1rem;">{{ p.business_email }}</td>
+              <td style="padding: 0.75rem 1rem; text-transform: capitalize;">{{ p.partner_type }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge {% if p.status == 'approved' %}badge-ok{% elif p.status == 'submitted' %}badge-warning{% else %}badge-error{% endif %}">
+                  {{ p.status }}
+                </span>
+                {% if p.rejection_reason %}
+                  <div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ p.rejection_reason }}</div>
+                {% endif %}
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <form method="post" action="{{ url_for('admin.partner_action', partner_id=p.id) }}" style="display: flex; gap: 0.4rem; align-items: center;">
+                  {% if p.status != 'approved' %}
+                    <button type="submit" name="action" value="approved" class="btn btn-sm btn-primary" title="Approve partner catalogue access">
+                      Approve
+                    </button>
+                  {% endif %}
+                  {% if p.status != 'rejected' %}
+                    <button type="submit" name="action" value="rejected" class="btn btn-sm btn-secondary" title="Reject application">
+                      Reject
+                    </button>
+                  {% endif %}
+                  {% if p.status == 'approved' %}
+                    <button type="submit" name="action" value="suspended" class="btn btn-sm btn-secondary" style="color: #dc2626;" title="Suspend partner">
+                      Suspend
+                    </button>
+                  {% endif %}
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="padding: 3rem 1rem; text-align: center; color: var(--fg-muted);">
+              No partner records matching this filter.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

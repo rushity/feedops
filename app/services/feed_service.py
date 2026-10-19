@@ -350,3 +350,46 @@ def fetch_and_store(db, feed_id: int) -> dict:
     db.commit()
     _update_fetch_status(db, feed_id, "ok", None, title=feed_title or None)
     return {"feed_id": feed_id, "added": added, "skipped": skipped, "total": len(entries), "status": "ok", "error": None}
+
+
+def delete_feed(db, feed_id: int) -> bool:
+    """Delete a feed subscription and cascade purge its articles."""
+    feed = get_feed(db, feed_id)
+    if not feed:
+        return False
+    db.execute("DELETE FROM articles WHERE feed_id = ?", (feed_id,))
+    db.execute("DELETE FROM feeds WHERE id = ?", (feed_id,))
+    db.commit()
+    return True
+
+
+def refresh_all_feeds(db) -> dict:
+    """Batch refresh all registered feeds."""
+    all_feeds = list_feeds(db)
+    total_added = 0
+    total_skipped = 0
+    total_entries = 0
+    success_count = 0
+    error_count = 0
+    errors = []
+
+    for feed in all_feeds:
+        res = fetch_and_store(db, feed["id"])
+        if res["status"] == "ok":
+            success_count += 1
+            total_added += res["added"]
+            total_skipped += res["skipped"]
+            total_entries += res["total"]
+        else:
+            error_count += 1
+            errors.append(f"{feed['title'] or feed['id']}: {res['error']}")
+
+    return {
+        "total_feeds": len(all_feeds),
+        "success_count": success_count,
+        "error_count": error_count,
+        "added": total_added,
+        "skipped": total_skipped,
+        "total": total_entries,
+        "errors": errors,
+    }

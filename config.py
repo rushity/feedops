@@ -11,6 +11,7 @@ class Config:
     """
 
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-change-me")
+    AFFILIATE_WEBHOOK_SECRET = os.environ.get("FEEDOPS_AFFILIATE_WEBHOOK_SECRET", "")
     DATABASE = os.environ.get(
         "DATABASE_PATH",
         os.path.join(BASE_DIR, "instance", "feed.db"),

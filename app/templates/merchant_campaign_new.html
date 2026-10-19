@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Create Advertising Campaign — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 0 auto;">
+  <div style="margin-bottom: 1.5rem;">
+    <a href="{{ url_for('merchant.campaigns') }}" style="color: var(--primary); font-size: 0.9rem; text-decoration: none; font-weight: 600;">
+      &larr; Back to Campaigns
+    </a>
+    <h1 style="margin: 0.5rem 0 0.25rem 0; font-size: 1.75rem; font-weight: 800;">Launch Sponsored Campaign</h1>
+    <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+      Feature one of your approved products in discovery streams with transparent sponsored disclosure.
+    </p>
+  </div>
+
+  {% if error %}
+    <div class="card" style="padding: 0.85rem 1rem; margin-bottom: 1.25rem; background: #fef2f2; border-color: #fecaca; color: #991b1b; font-size: 0.9rem;">
+      ⚠️ {{ error }}
+    </div>
+  {% endif %}
+
+  <div class="card" style="padding: 1.75rem;">
+    {% if not products %}
+      <div style="text-align: center; padding: 1.5rem 0;">
+        <p style="color: var(--fg-muted); margin-bottom: 1rem;">
+          You don't have any approved products to sponsor yet. Upload your catalog first!
+        </p>
+        <a href="{{ url_for('merchant.upload') }}" class="btn btn-primary">
+          Upload Catalog CSV
+        </a>
+      </div>
+    {% else %}
+      <form method="post" action="{{ url_for('merchant.campaign_new') }}">
+        <div style="margin-bottom: 1.25rem;">
+          <label for="title" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+            Campaign Name / Headline *
+          </label>
+          <input type="text" id="title" name="title" required placeholder="e.g. Summer Discovery Spotlight" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem;" />
+        </div>
+
+        <div style="margin-bottom: 1.25rem;">
+          <label for="product_id" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+            Target Product to Sponsor *
+          </label>
+          <select id="product_id" name="product_id" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem; background: var(--bg-surface);">
+            <option value="">-- Choose a product from your catalog --</option>
+            {% for p in products %}
+              <option value="{{ p.id }}">{{ p.title }} (${{ "%.2f" | format(p.price) }}) - [{{ p.sku }}]</option>
+            {% endfor %}
+          </select>
+          <small style="color: var(--fg-muted); display: block; margin-top: 0.35rem; font-size: 0.8rem;">
+            Only approved products in your catalog are eligible for sponsored placement.
+          </small>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+          <div>
+            <label for="start_date" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+              Start Date *
+            </label>
+            <input type="date" id="start_date" name="start_date" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem;" />
+          </div>
+          <div>
+            <label for="end_date" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+              End Date *
+            </label>
+            <input type="date" id="end_date" name="end_date" required style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem;" />
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+          <div>
+            <label for="daily_budget" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+              Daily Budget ($)
+            </label>
+            <input type="number" id="daily_budget" name="daily_budget" min="0" step="0.01" value="10.00" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem;" />
+          </div>
+          <div>
+            <label for="total_budget" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.35rem;">
+              Total Campaign Budget ($)
+            </label>
+            <input type="number" id="total_budget" name="total_budget" min="0" step="0.01" value="100.00" style="width: 100%; padding: 0.65rem 0.85rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: inherit; font-size: 0.95rem;" />
+          </div>
+        </div>
+
+        <div style="background: var(--bg-subtle); padding: 0.85rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--fg-muted);">
+          ℹ️ <strong>Platform Placement Policy:</strong> Sponsored products are highlighted with clear disclosures and frequency-capped to protect user trust. All campaigns require administrator review prior to delivery.
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <a href="{{ url_for('merchant.campaigns') }}" class="btn btn-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            Submit Campaign for Review
+          </button>
+        </div>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

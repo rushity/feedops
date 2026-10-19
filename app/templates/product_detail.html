@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.title }} — FeedOps Product{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 1.5rem auto;">
+  <!-- Breadcrumb -->
+  <div style="margin-bottom: 1rem; font-size: 0.85rem; color: var(--fg-muted);">
+    <a href="{{ url_for('consumer.discover') }}" style="color: var(--primary);">Discover</a> &rsaquo;
+    <a href="{{ url_for('consumer.products', category=product.category) }}" style="color: var(--primary);">{{ product.category.title() }}</a> &rsaquo;
+    <span>{{ product.title[:40] }}...</span>
+  </div>
+
+  <div class="card" style="padding: 2rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+      
+      <!-- Image Showcase -->
+      <div style="background: #f8fafc; border: 1px solid var(--border); border-radius: 8px; min-height: 320px; display: flex; align-items: center; justify-content: center; position: relative; padding: 1rem;">
+        {% if product.image_url %}
+          <img src="{{ product.image_url }}" alt="{{ product.title }}" style="max-width: 100%; max-height: 280px; object-fit: contain;" />
+        {% else %}
+          <div style="text-align: center; color: var(--fg-muted);">
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+            </svg>
+            <div style="margin-top: 0.5rem; font-weight: 600;">{{ product.category.title() }}</div>
+          </div>
+        {% endif %}
+
+        <span class="badge {% if product.availability == 'in_stock' %}badge-ok{% elif product.availability == 'preorder' %}badge-warning{% else %}badge-error{% endif %}" style="position: absolute; top: 1rem; right: 1rem;">
+          {{ product.availability.replace('_', ' ').title() }}
+        </span>
+      </div>
+
+      <!-- Details & Actions -->
+      <div style="display: flex; flex-direction: column;">
+        <div style="font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--fg-muted); margin-bottom: 0.25rem;">
+          {{ product.brand or 'General' }} &middot; {{ product.category.title() }}
+        </div>
+
+        <h1 style="font-size: 1.6rem; font-weight: 800; line-height: 1.25; margin: 0 0 1rem 0;">
+          {{ product.title }}
+        </h1>
+
+        <div style="margin-bottom: 1.25rem;">
+          <span style="font-size: 2rem; font-weight: 800; color: var(--fg);">
+            ${{ "{:,.2f}".format(product.price) }}
+          </span>
+          <span style="color: var(--fg-muted); font-size: 0.9rem; margin-left: 0.25rem;">{{ product.currency }}</span>
+        </div>
+
+        <!-- AI Recommendation Explanation Box -->
+        <div style="background: rgba(59, 130, 246, 0.05); border: 1px solid rgba(59, 130, 246, 0.2); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <span style="font-weight: 700; font-size: 0.9rem; color: #1e3a8a;">
+              🤖 AI Recommendation Rationale
+            </span>
+            <span class="badge" style="background: #3b82f6; color: #fff; font-size: 0.75rem;">
+              Fit Score: {{ score }}
+            </span>
+          </div>
+
+          <ul style="margin: 0; padding-left: 1.25rem; font-size: 0.85rem; color: #334155; line-height: 1.5;">
+            {% for reason in reasons %}
+              <li>{{ reason }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+
+        <!-- Primary CTAs -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1.5rem;">
+          <a href="{{ url_for('consumer.affiliate_redirect', product_id=product.id) }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary" style="flex: 2; padding: 0.75rem 1.25rem; font-weight: 700; text-align: center;">
+            View Offer on Partner Store [^]
+          </a>
+
+          {% if current_user_id %}
+            <form method="post" action="{% if is_saved %}{{ url_for('consumer.unsave_product', product_id=product.id) }}{% else %}{{ url_for('consumer.save_product', product_id=product.id) }}{% endif %}" style="flex: 1;">
+              <button type="submit" class="btn {% if is_saved %}btn-primary{% else %}btn-secondary{% endif %}" style="width: 100%; padding: 0.75rem;">
+                {% if is_saved %}★ Saved{% else %}☆ Save to Shortlist{% endif %}
+              </button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-secondary" style="flex: 1; padding: 0.75rem; text-align: center;">
+              ☆ Save
+            </a>
+          {% endif %}
+        </div>
+
+        <!-- Product Specs Metadata -->
+        <div style="border-top: 1px solid var(--border); padding-top: 1rem; font-size: 0.85rem; color: var(--fg-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+          <div><strong>SKU:</strong> {{ product.sku }}</div>
+          <div><strong>Partner:</strong> {{ product.partner_name or 'Direct Partner' }}</div>
+          <div><strong>Source:</strong> {{ product.feed_source.title() }} Feed</div>
+          <div><strong>Updated:</strong> {{ product.last_updated_at[:10] if product.last_updated_at else 'Recent' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Full Description -->
+    {% if product.description %}
+      <div style="margin-top: 2rem; border-top: 1px solid var(--border); padding-top: 1.5rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Product Overview</h3>
+        <div style="font-size: 0.95rem; color: #334155; line-height: 1.6; white-space: pre-line;">
+          {{ product.description }}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

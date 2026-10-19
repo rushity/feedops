@@ -30,9 +30,28 @@
       </a>
 
       <div class="nav-links" id="primary-nav">
+        <a class="nav-link {% if request.endpoint == 'consumer.discover' %}active{% endif %}" href="{{ url_for('consumer.discover') }}">Discover</a>
+        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('consumer.products') %}active{% endif %}" href="{{ url_for('consumer.products') }}">Products</a>
         <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">Dashboard</a>
         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feeds.') %}active{% endif %}" href="{{ url_for('feeds.feeds') }}">Feeds</a>
         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('articles.') %}active{% endif %}" href="{{ url_for('articles.article_list') }}">Articles</a>
+      </div>
+
+      <div class="nav-user-actions" style="display:flex;align-items:center;gap:0.75rem;">
+        {% if current_user_id %}
+          <a class="nav-link {% if request.endpoint == 'consumer.saved_items' %}active{% endif %}" href="{{ url_for('consumer.saved_items') }}" title="Saved Products">Saved</a>
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('privacy.notifications') %}active{% endif %}" href="{{ url_for('privacy.notifications') }}" title="Alerts">Alerts</a>
+          {% if current_user_role == 'merchant' %}
+            <a class="nav-link" href="{{ url_for('merchant.dashboard') }}" style="color:var(--primary);">Merchant</a>
+          {% elif current_user_role == 'admin' %}
+            <a class="nav-link" href="{{ url_for('admin.index') }}" style="color:var(--accent);">Admin</a>
+          {% endif %}
+          <a class="nav-link" href="{{ url_for('auth.preferences') }}" title="Preferences">Preferences</a>
+          <a class="nav-link" href="{{ url_for('auth.logout') }}" style="opacity:0.8;">Sign Out</a>
+        {% else %}
+          <a class="nav-link" href="{{ url_for('auth.login') }}">Sign In</a>
+          <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
       </div>
 
       <form class="nav-search" action="{{ url_for('search.search') }}" method="get" role="search">

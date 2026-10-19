@@ -36,23 +36,56 @@ def _filters_from_args(args):
 
 @articles_bp.route("/")
 def article_list():
-    """List recent articles; applies q/source/category/date filters when given."""
+    """List recent articles; applies q/source/category/date filters and pagination."""
+    import math
     filters = _filters_from_args(request.args)
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+    except (TypeError, ValueError):
+        page = 1
+    per_page = 20
+    offset = (page - 1) * per_page
+
     db = get_db()
     error = None
+    pagination = None
     try:
         if any(filters.values()):
-            articles = search_articles(
+            # Count total matching
+            all_matching = search_articles(
                 db,
                 filters["q"],
-                limit=50,
+                limit=1000,
                 source=filters["source"] or None,
                 category=filters["category"] or None,
                 date_from=filters["date_from"] or None,
                 date_to=filters["date_to"] or None,
             )
+            total = len(all_matching)
+            articles = all_matching[offset:offset + per_page]
         else:
-            articles = db.execute(_LIST_SQL).fetchall()
+            total_row = db.execute("SELECT COUNT(*) AS c FROM articles").fetchone()
+            total = int(total_row["c"]) if total_row else 0
+            articles = db.execute(
+                "SELECT a.id, a.feed_id, a.title, a.url, a.summary, a.category, "
+                "a.published_at, a.created_at, "
+                "f.title AS feed_title, f.url AS feed_url "
+                "FROM articles a LEFT JOIN feeds f ON a.feed_id = f.id "
+                "ORDER BY a.id DESC LIMIT ? OFFSET ?",
+                (per_page, offset),
+            ).fetchall()
+
+        total_pages = max(1, math.ceil(total / per_page))
+        pagination = {
+            "page": page,
+            "per_page": per_page,
+            "total": total,
+            "total_pages": total_pages,
+            "has_prev": page > 1,
+            "has_next": page < total_pages,
+            "prev_page": page - 1,
+            "next_page": page + 1,
+        }
         options = get_filter_options(db)
     except Exception as exc:
         articles, options = [], {"sources": [], "categories": []}
@@ -63,6 +96,7 @@ def article_list():
         query=filters["q"],
         filters=filters,
         options=options,
+        pagination=pagination,
         error=error,
     )
 

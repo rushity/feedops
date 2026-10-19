@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant Advertising Campaigns — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800;">Advertising & Sponsored Campaigns</h1>
+      <p style="color: var(--fg-muted); margin: 0.25rem 0 0 0; font-size: 0.95rem;">
+        Boost visibility for {{ partner.business_name }} products across consumer discovery feeds.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-secondary">
+        &larr; Merchant Portal
+      </a>
+      {% if partner.status == 'approved' %}
+        <a href="{{ url_for('merchant.campaign_new') }}" class="btn btn-primary">
+          + Create New Campaign
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if partner.status != 'approved' %}
+    <div class="card" style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: #fffbeb; border-color: #fde68a; color: #92400e;">
+      <strong>Account Pending Approval:</strong> Your merchant profile must be approved by an administrator before launching sponsored campaigns.
+    </div>
+  {% endif %}
+
+  {% if campaigns %}
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+        <thead>
+          <tr style="background: var(--bg-subtle); border-bottom: 1px solid var(--border); color: var(--fg-muted);">
+            <th style="padding: 0.85rem 1rem;">Campaign</th>
+            <th style="padding: 0.85rem 1rem;">Target Product</th>
+            <th style="padding: 0.85rem 1rem;">Budget</th>
+            <th style="padding: 0.85rem 1rem;">Duration</th>
+            <th style="padding: 0.85rem 1rem;">Status</th>
+            <th style="padding: 0.85rem 1rem; text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem; font-weight: 600;">
+                {{ c.title }}
+              </td>
+              <td style="padding: 1rem;">
+                <div style="font-weight: 500;">{{ c.product_title }}</div>
+                <small style="color: var(--fg-muted);">${{ "%.2f" | format(c.product_price) }}</small>
+              </td>
+              <td style="padding: 1rem;">
+                <div>Daily: ${{ "%.2f" | format(c.daily_budget) }}</div>
+                <small style="color: var(--fg-muted);">Total: ${{ "%.2f" | format(c.total_budget) }}</small>
+              </td>
+              <td style="padding: 1rem; font-size: 0.85rem; color: var(--fg-muted);">
+                {{ c.start_date }} &rarr; {{ c.end_date }}
+              </td>
+              <td style="padding: 1rem;">
+                <span class="badge {% if c.status == 'active' %}badge-ok{% elif c.status == 'pending' %}badge-warning{% elif c.status == 'paused' %}badge-neutral{% else %}badge-error{% endif %}">
+                  {{ c.status.title() }}
+                </span>
+                {% if c.rejection_reason %}
+                  <div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ c.rejection_reason }}</div>
+                {% endif %}
+              </td>
+              <td style="padding: 1rem; text-align: right;">
+                {% if c.status == 'active' %}
+                  <form method="post" action="{{ url_for('merchant.campaign_pause', campaign_id=c.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Pause this campaign?');">
+                      Pause
+                    </button>
+                  </form>
+                {% elif c.status == 'paused' %}
+                  <form method="post" action="{{ url_for('merchant.campaign_resume', campaign_id=c.id) }}" style="display: inline;">
+                    <button type="submit" class="btn btn-primary btn-sm">
+                      Resume
+                    </button>
+                  </form>
+                {% else %}
+                  <span style="color: var(--fg-muted); font-size: 0.8rem;">—</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card" style="padding: 3rem 1.5rem; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📢</div>
+      <h3 style="margin-top: 0; margin-bottom: 0.5rem; font-weight: 700;">No Advertising Campaigns Yet</h3>
+      <p style="color: var(--fg-muted); max-width: 450px; margin: 0 auto 1.5rem auto; font-size: 0.95rem;">
+        Launch sponsored campaigns to showcase your top-performing products with prominent badges in consumer discovery feeds.
+      </p>
+      {% if partner.status == 'approved' %}
+        <a href="{{ url_for('merchant.campaign_new') }}" class="btn btn-primary">
+          Create Your First Campaign
+        </a>
+      {% endif %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

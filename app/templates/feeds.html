@@ -102,6 +102,17 @@
       </svg>
       Subscribed Feeds {% if feeds %}({{ feeds | length }}){% endif %}
     </h2>
+    {% if feeds %}
+      <form method="post" action="{{ url_for('feeds.refresh_all') }}" style="display: inline-block;">
+        <button type="submit" class="btn btn-secondary btn-sm" id="btn-refresh-all">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          Refresh All
+        </button>
+      </form>
+    {% endif %}
   </div>
 
   {% if feeds %}
@@ -163,6 +174,11 @@
                       <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
                     </svg>
                     <span class="btn-text">Refresh</span>
+                  </button>
+                </form>
+                <form method="post" action="{{ url_for('feeds.delete_feed', feed_id=f['id']) }}" onsubmit="return confirm('Delete this feed and purge all its articles?');" style="display: inline-block; margin-left: 0.35rem;">
+                  <button type="submit" class="btn btn-secondary btn-sm" style="color: var(--danger);" aria-label="Delete feed {{ f['title'] or f['id'] }}">
+                    Delete
                   </button>
                 </form>
               </td>
