@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Notification Settings & Alerts — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 1.5rem auto;">
+  <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem;">Notification Center & Deal Alerts</h1>
+  <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+    Configure price-drop notifications, quiet hours, frequency, and view your alert inbox.
+  </p>
+
+  {% if message %}
+    <div class="alert alert-ok" style="margin-bottom: 1.25rem;"><span>{{ message }}</span></div>
+  {% endif %}
+  {% if error %}
+    <div class="alert alert-error" style="margin-bottom: 1.25rem;"><span>{{ error }}</span></div>
+  {% endif %}
+
+  <!-- Notification Settings Card -->
+  <div class="card" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">Alert Controls & Channels</h2>
+
+    <form method="post" action="{{ url_for('privacy.notifications') }}">
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+        
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+          <input type="checkbox" name="price_drop_alerts" value="1" {% if settings.price_drop_alerts %}checked{% endif %} style="margin-top: 0.2rem;" />
+          <div>
+            <strong>Price Drop Alerts</strong>
+            <span style="display: block; font-size: 0.8rem; color: var(--fg-muted);">When shortlisted items fall in price</span>
+          </div>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+          <input type="checkbox" name="availability_alerts" value="1" {% if settings.availability_alerts %}checked{% endif %} style="margin-top: 0.2rem;" />
+          <div>
+            <strong>Restock / Availability</strong>
+            <span style="display: block; font-size: 0.8rem; color: var(--fg-muted);">When pre-orders or out-of-stock items become ready</span>
+          </div>
+        </label>
+
+        <label style="display: flex; align-items: flex-start; gap: 0.5rem; padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; font-size: 0.9rem;">
+          <input type="checkbox" name="email_alerts" value="1" {% if settings.email_alerts %}checked{% endif %} style="margin-top: 0.2rem;" />
+          <div>
+            <strong>Email Channel</strong>
+            <span style="display: block; font-size: 0.8rem; color: var(--fg-muted);">Send digests to registered email</span>
+          </div>
+        </label>
+      </div>
+
+      <!-- Frequency & Quiet Hours -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; background: var(--bg); padding: 1rem; border-radius: 6px; border: 1px solid var(--border);">
+        <div>
+          <label for="digest_frequency" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem;">Digest Frequency</label>
+          <select id="digest_frequency" name="digest_frequency" class="input" style="width: 100%; padding: 0.5rem;">
+            <option value="instant" {% if settings.digest_frequency == 'instant' %}selected{% endif %}>Real-Time Alerts</option>
+            <option value="daily" {% if settings.digest_frequency == 'daily' %}selected{% endif %}>Daily Summary</option>
+            <option value="weekly" {% if settings.digest_frequency == 'weekly' %}selected{% endif %}>Weekly Summary</option>
+            <option value="none" {% if settings.digest_frequency == 'none' %}selected{% endif %}>None (Inbox Only)</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="quiet_hours_start" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem;">Quiet Hours (Start)</label>
+          <input type="text" id="quiet_hours_start" name="quiet_hours_start" value="{{ settings.quiet_hours_start | default('22:00') }}" class="input" style="width: 100%; padding: 0.5rem;" placeholder="22:00" />
+        </div>
+
+        <div>
+          <label for="quiet_hours_end" style="display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.25rem;">Quiet Hours (End)</label>
+          <input type="text" id="quiet_hours_end" name="quiet_hours_end" value="{{ settings.quiet_hours_end | default('08:00') }}" class="input" style="width: 100%; padding: 0.5rem;" placeholder="08:00" />
+        </div>
+      </div>
+
+      <!-- Master Pause Switch -->
+      <div style="margin-bottom: 1.5rem;">
+        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.9rem; cursor: pointer;">
+          <input type="checkbox" name="is_paused" value="1" {% if settings.is_paused %}checked{% endif %} />
+          <span><strong>Pause All Notifications:</strong> Temporarily stop all alerts and emails without losing settings.</span>
+        </label>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem; font-weight: 600;">
+        Save Notification Preferences
+      </button>
+    </form>
+  </div>
+
+  <!-- Notification Inbox -->
+  <div class="card" style="padding: 1.75rem;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">Recent Alerts Inbox</h2>
+
+    {% if inbox %}
+      <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+        {% for note in inbox %}
+          <div style="padding: 0.85rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="font-weight: 700; font-size: 0.95rem;">{{ note.title }}</div>
+              <p style="margin: 0.2rem 0 0.3rem 0; font-size: 0.85rem; color: #334155;">{{ note.message }}</p>
+              <span style="font-size: 0.75rem; color: var(--fg-muted);">{{ note.created_at }}</span>
+            </div>
+            {% if note.product_id %}
+              <a href="{{ url_for('consumer.product_detail', product_id=note.product_id) }}" class="btn btn-sm btn-secondary">
+                View Offer
+              </a>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p style="color: var(--fg-muted); font-size: 0.9rem;">Your notification inbox is currently clear.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

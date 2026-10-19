@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}Consent Governance & Privacy — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 750px; margin: 1.5rem auto;">
+  <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem;">Consent Governance & Privacy Rights</h1>
+  <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+    Manage granular permissions, review audit history of granted consents, and export or delete your personal data.
+  </p>
+
+  <!-- Active Consents Form -->
+  <div class="card" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem;">Active Permissions & Opt-Ins</h2>
+
+    {% set consent_items = [
+      ('personalization', 'AI Feed Personalization', 'Permission to score discovery feeds using your declared interests, budget, and click history.'),
+      ('marketing', 'Promotional & Deal Alerts', 'Permission to receive periodic deal alerts and curated product digests.'),
+      ('location', 'Broad Regional Deals', 'Permission to filter local merchant offers based on broad state/city region.'),
+      ('voice', 'User-Initiated Voice Search', 'Permission to process spoken queries when microphone button is explicitly pressed.')
+    ] %}
+
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for key, title, desc in consent_items %}
+        <div style="padding: 1rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+          <div style="flex: 1;">
+            <div style="font-weight: 700; font-size: 0.95rem;">{{ title }}</div>
+            <p style="margin: 0.25rem 0 0 0; font-size: 0.85rem; color: var(--fg-muted);">{{ desc }}</p>
+          </div>
+
+          <form method="post" action="{{ url_for('privacy.consents') }}">
+            <input type="hidden" name="consent_type" value="{{ key }}" />
+            {% if consents.get(key) %}
+              <input type="hidden" name="granted" value="0" />
+              <button type="submit" class="btn btn-sm btn-secondary" style="color: #dc2626;">Revoke Consent</button>
+            {% else %}
+              <input type="hidden" name="granted" value="1" />
+              <button type="submit" class="btn btn-sm btn-primary">Grant Consent</button>
+            {% endif %}
+          </form>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- GDPR / DPDP User Rights -->
+  <div class="card" style="padding: 1.75rem; margin-bottom: 2rem;">
+    <h2 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">Data Protection Rights</h2>
+    <p style="font-size: 0.9rem; color: var(--fg-muted); margin-bottom: 1.25rem;">
+      Under privacy standards (GDPR Article 20 / DPDP Act), you have full control over your personal data:
+    </p>
+
+    <div style="display: flex; flex-wrap: wrap; gap: 1rem;">
+      <a href="{{ url_for('privacy.export_data') }}" class="btn btn-secondary" style="flex: 1; text-align: center; padding: 0.75rem;">
+        📥 Download Machine-Readable Data (JSON)
+      </a>
+      <a href="{{ url_for('privacy.delete_account') }}" class="btn btn-secondary" style="flex: 1; text-align: center; padding: 0.75rem; color: #dc2626;">
+        🗑️ Request Account Erasure
+      </a>
+    </div>
+  </div>
+
+  <!-- Consent Audit History -->
+  <div class="card" style="padding: 1.75rem;">
+    <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.75rem;">Consent Audit Log</h3>
+    {% if history %}
+      <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
+        <thead>
+          <tr style="border-bottom: 1px solid var(--border); color: var(--fg-muted); text-align: left;">
+            <th style="padding: 0.5rem 0;">Type</th>
+            <th style="padding: 0.5rem 0;">Action</th>
+            <th style="padding: 0.5rem 0;">Policy Version</th>
+            <th style="padding: 0.5rem 0;">Timestamp</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for h in history %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.5rem 0; font-weight: 600;">{{ h.consent_type.title() }}</td>
+              <td style="padding: 0.5rem 0;">
+                <span class="badge {% if h.granted %}badge-ok{% else %}badge-error{% endif %}">
+                  {{ 'Granted' if h.granted else 'Revoked' }}
+                </span>
+              </td>
+              <td style="padding: 0.5rem 0;">v{{ h.version }}</td>
+              <td style="padding: 0.5rem 0; color: var(--fg-muted);">{{ h.timestamp }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p style="color: var(--fg-muted); font-size: 0.85rem;">No consent history recorded yet.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

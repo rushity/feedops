@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}User Management — FeedOps Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">User Account Governance</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        View registered consumer, merchant, and administrator accounts and enforce access restrictions.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">&larr; Admin Console</a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">ID</th>
+          <th style="padding: 0.75rem 1rem;">User Email</th>
+          <th style="padding: 0.75rem 1rem;">Display Name</th>
+          <th style="padding: 0.75rem 1rem;">Role</th>
+          <th style="padding: 0.75rem 1rem;">Status</th>
+          <th style="padding: 0.75rem 1rem;">Registered</th>
+          <th style="padding: 0.75rem 1rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+          <tr style="border-bottom: 1px solid var(--border);">
+            <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ u.id }}</td>
+            <td style="padding: 0.75rem 1rem; font-weight: 600;">{{ u.email }}</td>
+            <td style="padding: 0.75rem 1rem;">{{ u.display_name or '—' }}</td>
+            <td style="padding: 0.75rem 1rem;">
+              <span class="badge {% if u.role == 'admin' %}badge-error{% elif u.role == 'merchant' %}badge-warning{% else %}badge-ok{% endif %}">
+                {{ u.role.title() }}
+              </span>
+            </td>
+            <td style="padding: 0.75rem 1rem;">
+              <span class="badge {% if u.status == 'active' %}badge-ok{% else %}badge-error{% endif %}">
+                {{ u.status }}
+              </span>
+            </td>
+            <td style="padding: 0.75rem 1rem; color: var(--fg-muted); font-size: 0.8rem;">{{ u.created_at[:10] if u.created_at else '' }}</td>
+            <td style="padding: 0.75rem 1rem;">
+              <form method="post" action="{{ url_for('admin.toggle_user_status', user_id=u.id) }}">
+                <button type="submit" class="btn btn-sm btn-secondary" style="{% if u.status == 'active' %}color:#dc2626;{% else %}color:#059669;{% endif %}">
+                  {% if u.status == 'active' %}Suspend{% else %}Activate{% endif %}
+                </button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

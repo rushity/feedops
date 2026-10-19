@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Delete Account — FeedOps Privacy{% endblock %}
+
+{% block content %}
+<div style="max-width: 550px; margin: 3rem auto;">
+  <div class="card" style="padding: 2rem; border-color: #fca5a5;">
+    <h1 style="font-size: 1.5rem; font-weight: 800; color: #dc2626; margin-bottom: 0.75rem;">
+      Delete Account &amp; Erase Personal Data
+    </h1>
+    <p style="color: var(--fg-muted); font-size: 0.95rem; line-height: 1.5; margin-bottom: 1.25rem;">
+      Under GDPR and DPDP Right to Erasure, executing this action will permanently delete your user account, declared preferences, saved products, feedback history, and notification logs.
+    </p>
+
+    <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+      <strong>Warning:</strong> This action is permanent and cannot be undone.
+    </div>
+
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+        <span>{{ error }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('privacy.delete_account') }}">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="confirmation" style="display: block; font-weight: 600; font-size: 0.9rem; margin-bottom: 0.5rem;">
+          To proceed, type <code>DELETE MY ACCOUNT</code> below:
+        </label>
+        <input type="text" id="confirmation" name="confirmation" class="input" style="width: 100%; padding: 0.6rem;" required placeholder="DELETE MY ACCOUNT" />
+      </div>
+
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button type="submit" class="btn btn-secondary" style="background: #dc2626; color: #fff; border-color: #dc2626; font-weight: 700;">
+          Permanently Delete My Account
+        </button>
+        <a href="{{ url_for('auth.preferences') }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

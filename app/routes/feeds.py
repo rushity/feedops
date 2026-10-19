@@ -44,3 +44,30 @@ def refresh_feed(feed_id: int):
         )
         return render_template("feeds.html", feeds=all_feeds, error=None, message=message)
     return render_template("feeds.html", feeds=all_feeds, error=result["error"], message=None)
+
+
+@feeds_bp.route("/refresh-all", methods=["POST"])
+def refresh_all():
+    db = get_db()
+    result = feed_service.refresh_all_feeds(db)
+    all_feeds = feed_service.list_feeds(db)
+    message = (
+        f"Refreshed {result['success_count']} of {result['total_feeds']} feeds. "
+        f"{result['added']} new articles added."
+    )
+    error = f"Errors on {result['error_count']} feeds: {'; '.join(result['errors'])}" if result["errors"] else None
+    return render_template("feeds.html", feeds=all_feeds, error=error, message=message)
+
+
+@feeds_bp.route("/<int:feed_id>/delete", methods=["POST"])
+def delete_feed(feed_id: int):
+    db = get_db()
+    feed = feed_service.get_feed(db, feed_id)
+    if feed is None:
+        all_feeds = feed_service.list_feeds(db)
+        return render_template("feeds.html", feeds=all_feeds, error="Feed not found.", message=None), 404
+    feed_title = feed["title"] or feed["url"]
+    feed_service.delete_feed(db, feed_id)
+    all_feeds = feed_service.list_feeds(db)
+    message = f"Deleted feed '{feed_title}' and removed its articles."
+    return render_template("feeds.html", feeds=all_feeds, error=None, message=message)

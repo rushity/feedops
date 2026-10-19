@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}My Products — FeedOps Merchant{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">My Registered Products</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Products active in the discovery feed for {{ partner.business_name }}.
+      </p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('merchant.upload') }}" class="btn btn-primary" style="font-size: 0.85rem;">+ Ingest Catalogue CSV</a>
+      <a href="{{ url_for('merchant.dashboard') }}" class="btn btn-secondary" style="font-size: 0.85rem;">Dashboard</a>
+    </div>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">SKU</th>
+          <th style="padding: 0.75rem 1rem;">Product Title</th>
+          <th style="padding: 0.75rem 1rem;">Category</th>
+          <th style="padding: 0.75rem 1rem;">Price</th>
+          <th style="padding: 0.75rem 1rem;">Availability</th>
+          <th style="padding: 0.75rem 1rem;">Moderation</th>
+          <th style="padding: 0.75rem 1rem;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if products %}
+          {% for p in products %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace; font-weight: 600;">{{ p.sku }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <div style="font-weight: 600;">{{ p.title }}</div>
+                {% if p.brand %}<span style="font-size: 0.75rem; color: var(--fg-muted);">{{ p.brand }}</span>{% endif %}
+              </td>
+              <td style="padding: 0.75rem 1rem; text-transform: capitalize;">{{ p.category }}</td>
+              <td style="padding: 0.75rem 1rem; font-weight: 700;">${{ "{:,.2f}".format(p.price) }}</td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge {% if p.availability == 'in_stock' %}badge-ok{% else %}badge-warning{% endif %}">
+                  {{ p.availability }}
+                </span>
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <span class="badge {% if p.moderation_status == 'approved' %}badge-ok{% elif p.moderation_status == 'pending' %}badge-warning{% else %}badge-error{% endif %}">
+                  {{ p.moderation_status }}
+                </span>
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <a href="{{ url_for('consumer.product_detail', product_id=p.id) }}" class="btn btn-sm btn-secondary" target="_blank">
+                  Preview
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" style="padding: 3rem 1rem; text-align: center; color: var(--fg-muted);">
+              No products found in catalogue. Ingest a CSV feed to publish products.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

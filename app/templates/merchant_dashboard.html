@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant Portal — FeedOps{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <!-- Header -->
+  <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+    <div>
+      <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.25rem;">
+        <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0;">{{ partner.business_name }}</h1>
+        <span class="badge {% if partner.status == 'approved' %}badge-ok{% elif partner.status == 'submitted' %}badge-warning{% else %}badge-error{% endif %}">
+          {{ partner.status.replace('_', ' ').title() }}
+        </span>
+      </div>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.9rem;">
+        Merchant ID #{{ partner.id }} &middot; {{ partner.website }} &middot; {{ partner.category or 'General' }}
+      </p>
+    </div>
+
+    <div style="display: flex; gap: 0.75rem;">
+      <a href="{{ url_for('merchant.campaigns') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
+        📢 Ad Campaigns
+      </a>
+      <a href="{{ url_for('merchant.upload') }}" class="btn btn-primary" style="font-size: 0.85rem;">
+        + Ingest Catalogue CSV
+      </a>
+      <a href="{{ url_for('merchant.products') }}" class="btn btn-secondary" style="font-size: 0.85rem;">
+        View My Products
+      </a>
+    </div>
+  </div>
+
+  <!-- Operational KPI Metrics -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Active Products</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0;">{{ metrics.total_products }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);">{{ metrics.in_stock_products }} in stock</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Outbound Referrals</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0; color: var(--primary);">{{ metrics.total_clicks }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);">Tracked clicks to store</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Import Batches</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0;">{{ metrics.total_import_jobs }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);"><a href="{{ url_for('merchant.imports') }}">View import logs</a></div>
+    </div>
+  </div>
+
+  <!-- Recent Ingestion Jobs & Products -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem;">
+    <!-- Recent Imports -->
+    <div class="card" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Recent Import Jobs</h3>
+        <a href="{{ url_for('merchant.imports') }}" style="font-size: 0.85rem; color: var(--primary);">See all</a>
+      </div>
+
+      {% if recent_imports %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for job in recent_imports %}
+            <div style="padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 600;">
+                <span>{{ job.filename }}</span>
+                <span class="badge {% if job.status == 'completed' %}badge-ok{% elif job.status == 'partial' %}badge-warning{% else %}badge-error{% endif %}">
+                  {{ job.status.title() }}
+                </span>
+              </div>
+              <div style="color: var(--fg-muted); margin-top: 0.25rem;">
+                {{ job.items_imported }} imported, {{ job.items_skipped }} skipped &middot; {{ job.created_at[:16] }}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--fg-muted); font-size: 0.9rem;">No catalogues imported yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent Products -->
+    <div class="card" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Catalogue Sample</h3>
+        <a href="{{ url_for('merchant.products') }}" style="font-size: 0.85rem; color: var(--primary);">Manage all</a>
+      </div>
+
+      {% if recent_products %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for prod in recent_products %}
+            <div style="padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 600;">{{ prod.title[:35] }}...</div>
+                <div style="color: var(--fg-muted);">SKU: {{ prod.sku }} &middot; ${{ "{:,.2f}".format(prod.price) }}</div>
+              </div>
+              <span class="badge {% if prod.availability == 'in_stock' %}badge-ok{% else %}badge-warning{% endif %}">
+                {{ prod.availability }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--fg-muted); font-size: 0.9rem;">No products registered yet. Click Ingest Catalogue to get started.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

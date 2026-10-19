@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Merchant & Brand Application — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 650px; margin: 2rem auto;">
+  <div class="card" style="padding: 2rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem;">Partner & Merchant Onboarding</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Connect your product catalogue, submit scheduled feeds, and reach active consumer discovery shoppers.
+    </p>
+
+    {% if partner %}
+      <div class="alert {% if partner.status == 'approved' %}alert-ok{% elif partner.status == 'submitted' %}alert-info{% elif partner.status == 'rejected' %}alert-error{% else %}alert-warning{% endif %}" style="margin-bottom: 1.5rem;">
+        <div>
+          <strong>Application Status: {{ partner.status.replace('_', ' ').title() }}</strong>
+          {% if partner.rejection_reason %}
+            <p style="margin: 0.25rem 0 0 0;">Feedback: {{ partner.rejection_reason }}</p>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
+
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+        <span>{{ error }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('merchant.apply') }}">
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="business_name" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Legal Business Name *</label>
+        <input type="text" id="business_name" name="business_name" class="input" style="width: 100%; padding: 0.6rem;" required value="{{ partner.business_name if partner else '' }}" placeholder="Acme Retail Ltd." />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="website" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Store Website / Domain *</label>
+        <input type="url" id="website" name="website" class="input" style="width: 100%; padding: 0.6rem;" required value="{{ partner.website if partner else '' }}" placeholder="https://store.example.com" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="business_email" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Business Contact Email *</label>
+        <input type="email" id="business_email" name="business_email" class="input" style="width: 100%; padding: 0.6rem;" required value="{{ partner.business_email if partner else '' }}" placeholder="partners@example.com" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="partner_type" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Partner Type</label>
+        <select id="partner_type" name="partner_type" class="input" style="width: 100%; padding: 0.6rem;">
+          <option value="merchant" {% if partner and partner.partner_type == 'merchant' %}selected{% endif %}>Direct Merchant / Retailer</option>
+          <option value="brand" {% if partner and partner.partner_type == 'brand' %}selected{% endif %}>Brand Manufacturer</option>
+          <option value="affiliate" {% if partner and partner.partner_type == 'affiliate' %}selected{% endif %}>Affiliate Network / Agency</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="category" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Primary Product Category</label>
+        <input type="text" id="category" name="category" class="input" style="width: 100%; padding: 0.6rem;" value="{{ partner.category if partner else '' }}" placeholder="Electronics, Fashion, Home Goods..." />
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 700;">
+        {% if partner %}Update Application{% else %}Submit Partner Application{% endif %}
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

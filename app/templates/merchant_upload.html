@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Ingest Product Catalogue — FeedOps Merchant{% endblock %}
+
+{% block content %}
+<div style="max-width: 800px; margin: 1.5rem auto;">
+  <div style="margin-bottom: 1rem;">
+    <a href="{{ url_for('merchant.dashboard') }}" style="color: var(--primary); font-size: 0.9rem;">&larr; Back to Merchant Dashboard</a>
+  </div>
+
+  <div class="card" style="padding: 2rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 0.5rem;">Ingest Product Catalogue (CSV)</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Upload your product inventory in standard CSV format. The ingestion engine validates required fields, deduplicates existing SKUs, and normalizes pricing and availability.
+    </p>
+
+    <!-- Validation / Import Summary -->
+    {% if summary %}
+      <div class="alert alert-ok" style="margin-bottom: 1.5rem;">
+        <div>
+          <strong>Batch Ingestion Complete:</strong>
+          <span>{{ summary.imported }} items processed/active, {{ summary.skipped }} skipped out of {{ summary.total }}.</span>
+        </div>
+      </div>
+    {% endif %}
+
+    {% if errors %}
+      <div class="alert alert-error" style="margin-bottom: 1.5rem;">
+        <div>
+          <strong>Validation Errors Detected ({{ errors|length }}):</strong>
+          <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0; font-size: 0.85rem;">
+            {% for err in errors[:10] %}
+              <li>{{ err }}</li>
+            {% endfor %}
+            {% if errors|length > 10 %}
+              <li>...and {{ errors|length - 10 }} more errors.</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    {% endif %}
+
+    <!-- Upload Form -->
+    <form method="post" enctype="multipart/form-data" action="{{ url_for('merchant.upload') }}">
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="csv_file" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Option A: Upload CSV File (.csv)</label>
+        <input type="file" id="csv_file" name="csv_file" accept=".csv,text/csv" class="input" style="width: 100%; padding: 0.5rem;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="csv_text" style="display: block; font-weight: 600; margin-bottom: 0.5rem;">Option B: Or Paste CSV Content</label>
+        <textarea id="csv_text" name="csv_text" rows="8" class="input" style="width: 100%; font-family: monospace; font-size: 0.85rem; padding: 0.75rem;" placeholder="sku,title,category,price,currency,availability,brand,product_url,image_url&#10;SKU-101,Sony WH-1000XM5,electronics,349.99,USD,in_stock,Sony,https://store.example.com/item1,https://store.example.com/img1.jpg"></textarea>
+      </div>
+
+      <!-- Specification Box -->
+      <div style="background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem;">
+        <strong>Required CSV Headers:</strong>
+        <code style="display: block; margin-top: 0.25rem; color: var(--primary);">sku, title, category, price, product_url</code>
+        <span style="color: var(--fg-muted); display: block; margin-top: 0.25rem;">
+          Optional headers: <code>currency</code> (default USD), <code>availability</code> (in_stock, out_of_stock, preorder), <code>brand</code>, <code>description</code>, <code>image_url</code>, <code>is_sponsored</code> (1/0).
+        </span>
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; font-weight: 700;">
+        Validate & Ingest Catalogue
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

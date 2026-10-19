@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Sponsored Campaigns — Admin — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <div>
+      <h1 style="margin: 0; font-size: 1.75rem; font-weight: 800;">Campaign Governance & Moderation</h1>
+      <p style="color: var(--fg-muted); margin: 0.25rem 0 0 0; font-size: 0.95rem;">
+        Review partner advertising submissions, enforce frequency policies, and manage sponsored placements.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.dashboard') }}" class="btn btn-secondary">
+      &larr; Admin Console
+    </a>
+  </div>
+
+  <!-- Status Filter Tabs -->
+  <div style="display: flex; gap: 0.5rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+    <a href="{{ url_for('admin.campaigns') }}" class="btn {% if not current_status %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      All Campaigns
+    </a>
+    <a href="{{ url_for('admin.campaigns', status='pending') }}" class="btn {% if current_status == 'pending' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      Pending Review
+    </a>
+    <a href="{{ url_for('admin.campaigns', status='active') }}" class="btn {% if current_status == 'active' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      Active
+    </a>
+    <a href="{{ url_for('admin.campaigns', status='paused') }}" class="btn {% if current_status == 'paused' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      Paused
+    </a>
+    <a href="{{ url_for('admin.campaigns', status='suspended') }}" class="btn {% if current_status == 'suspended' %}btn-primary{% else %}btn-secondary{% endif %} btn-sm">
+      Suspended
+    </a>
+  </div>
+
+  {% if campaigns %}
+    <div class="card" style="padding: 0; overflow: hidden;">
+      <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+        <thead>
+          <tr style="background: var(--bg-subtle); border-bottom: 1px solid var(--border); color: var(--fg-muted);">
+            <th style="padding: 0.85rem 1rem;">ID</th>
+            <th style="padding: 0.85rem 1rem;">Merchant / Partner</th>
+            <th style="padding: 0.85rem 1rem;">Campaign & Product</th>
+            <th style="padding: 0.85rem 1rem;">Budget</th>
+            <th style="padding: 0.85rem 1rem;">Duration</th>
+            <th style="padding: 0.85rem 1rem;">Status</th>
+            <th style="padding: 0.85rem 1rem; text-align: right;">Moderation Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in campaigns %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 1rem; color: var(--fg-muted);">#{{ c.id }}</td>
+              <td style="padding: 1rem; font-weight: 600;">{{ c.partner_name }}</td>
+              <td style="padding: 1rem;">
+                <div style="font-weight: 600;">{{ c.title }}</div>
+                <small style="color: var(--fg-muted);">Target: {{ c.product_title }} (${{ "%.2f" | format(c.product_price) }})</small>
+              </td>
+              <td style="padding: 1rem;">
+                <div>Daily: ${{ "%.2f" | format(c.daily_budget) }}</div>
+                <small style="color: var(--fg-muted);">Total: ${{ "%.2f" | format(c.total_budget) }}</small>
+              </td>
+              <td style="padding: 1rem; font-size: 0.85rem; color: var(--fg-muted);">
+                {{ c.start_date }} &rarr; {{ c.end_date }}
+              </td>
+              <td style="padding: 1rem;">
+                <span class="badge {% if c.status == 'active' %}badge-ok{% elif c.status == 'pending' %}badge-warning{% elif c.status == 'paused' %}badge-neutral{% else %}badge-error{% endif %}">
+                  {{ c.status.title() }}
+                </span>
+                {% if c.rejection_reason %}
+                  <div style="font-size: 0.75rem; color: #dc2626; margin-top: 0.25rem;">{{ c.rejection_reason }}</div>
+                {% endif %}
+              </td>
+              <td style="padding: 1rem; text-align: right;">
+                <div style="display: flex; gap: 0.4rem; justify-content: flex-end; align-items: center;">
+                  {% if c.status != 'active' %}
+                    <form method="post" action="{{ url_for('admin.approve_campaign', campaign_id=c.id) }}" style="display: inline;">
+                      <button type="submit" class="btn btn-primary btn-sm" style="background: #059669; border-color: #059669;">
+                        Approve
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if c.status != 'suspended' and c.status != 'rejected' %}
+                    <form method="post" action="{{ url_for('admin.suspend_campaign', campaign_id=c.id) }}" style="display: inline;">
+                      <button type="submit" class="btn btn-secondary btn-sm" onclick="return confirm('Suspend this campaign?');">
+                        Suspend
+                      </button>
+                    </form>
+                  {% endif %}
+
+                  {% if c.status == 'pending' %}
+                    <form method="post" action="{{ url_for('admin.reject_campaign', campaign_id=c.id) }}" style="display: inline;">
+                      <button type="submit" class="btn btn-secondary btn-sm" style="color: #dc2626;" onclick="return confirm('Reject this campaign?');">
+                        Reject
+                      </button>
+                    </form>
+                  {% endif %}
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="card" style="padding: 3rem 1.5rem; text-align: center; color: var(--fg-muted);">
+      <p style="margin: 0; font-size: 1rem;">No campaigns found matching the selected filter.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

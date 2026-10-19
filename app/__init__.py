@@ -33,11 +33,31 @@ def create_app(test_config=None):
     from app.routes.feeds import feeds_bp
     from app.routes.articles import articles_bp
     from app.routes.search import search_bp
+    from app.routes.auth import auth_bp
+    from app.routes.consumer import consumer_bp
+    from app.routes.merchant import merchant_bp
+    from app.routes.admin import admin_bp
+    from app.routes.privacy import privacy_bp
 
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(feeds_bp)
     app.register_blueprint(articles_bp)
     app.register_blueprint(search_bp)
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(consumer_bp)
+    app.register_blueprint(merchant_bp)
+    app.register_blueprint(admin_bp)
+    app.register_blueprint(privacy_bp)
+
+    @app.context_processor
+    def inject_user_context():
+        from flask import session
+        return {
+            "current_user_id": session.get("user_id"),
+            "current_user_email": session.get("user_email"),
+            "current_user_role": session.get("user_role"),
+            "current_user_name": session.get("user_name"),
+        }
 
     @app.route("/health")
     def health():

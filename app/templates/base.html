@@ -3,28 +3,99 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{% block title %}FeedOps{% endblock %}</title>
+  <meta name="theme-color" content="#111827" />
+  <meta name="description" content="FeedOps — Operational RSS/Atom Intelligence & Feed Management Platform" />
+  <title>{% block title %}FeedOps — Feed Management Hub{% endblock %}</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+  {% block extra_head %}{% endblock %}
 </head>
 <body>
-  <header class="site-header">
-    <nav class="nav">
-      <a class="brand" href="{{ url_for('dashboard.index') }}">FeedOps</a>
-      <a href="{{ url_for('dashboard.index') }}">Dashboard</a>
-      <a href="{{ url_for('feeds.feeds') }}">Feeds</a>
-      <a href="{{ url_for('articles.article_list') }}">Articles</a>
-      <form class="nav-search" action="{{ url_for('search.search') }}" method="get">
-        <input type="search" name="q" placeholder="Search articles..." value="{{ query | default('') }}" />
-        <button type="submit">Search</button>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <header class="site-header" role="banner">
+    <nav class="nav" aria-label="Main navigation">
+      <a class="brand" href="{{ url_for('dashboard.index') }}">
+        <span class="brand-icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 11a9 9 0 0 1 9 9"></path>
+            <path d="M4 4a16 16 0 0 1 16 16"></path>
+            <circle cx="5" cy="19" r="1" fill="currentColor"></circle>
+          </svg>
+        </span>
+        <span class="brand-text">FeedOps</span>
+      </a>
+
+      <div class="nav-links" id="primary-nav">
+        <a class="nav-link {% if request.endpoint == 'consumer.discover' %}active{% endif %}" href="{{ url_for('consumer.discover') }}">Discover</a>
+        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('consumer.products') %}active{% endif %}" href="{{ url_for('consumer.products') }}">Products</a>
+        <a class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}" href="{{ url_for('dashboard.index') }}">Dashboard</a>
+        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('feeds.') %}active{% endif %}" href="{{ url_for('feeds.feeds') }}">Feeds</a>
+        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('articles.') %}active{% endif %}" href="{{ url_for('articles.article_list') }}">Articles</a>
+      </div>
+
+      <div class="nav-user-actions" style="display:flex;align-items:center;gap:0.75rem;">
+        {% if current_user_id %}
+          <a class="nav-link {% if request.endpoint == 'consumer.saved_items' %}active{% endif %}" href="{{ url_for('consumer.saved_items') }}" title="Saved Products">Saved</a>
+          <a class="nav-link {% if request.endpoint and request.endpoint.startswith('privacy.notifications') %}active{% endif %}" href="{{ url_for('privacy.notifications') }}" title="Alerts">Alerts</a>
+          {% if current_user_role == 'merchant' %}
+            <a class="nav-link" href="{{ url_for('merchant.dashboard') }}" style="color:var(--primary);">Merchant</a>
+          {% elif current_user_role == 'admin' %}
+            <a class="nav-link" href="{{ url_for('admin.index') }}" style="color:var(--accent);">Admin</a>
+          {% endif %}
+          <a class="nav-link" href="{{ url_for('auth.preferences') }}" title="Preferences">Preferences</a>
+          <a class="nav-link" href="{{ url_for('auth.logout') }}" style="opacity:0.8;">Sign Out</a>
+        {% else %}
+          <a class="nav-link" href="{{ url_for('auth.login') }}">Sign In</a>
+          <a class="btn btn-sm btn-primary" href="{{ url_for('auth.register') }}">Register</a>
+        {% endif %}
+      </div>
+
+      <form class="nav-search" action="{{ url_for('search.search') }}" method="get" role="search">
+        <input 
+          type="search" 
+          name="q" 
+          placeholder="Search articles..." 
+          value="{{ query | default('') }}" 
+          aria-label="Search articles"
+          required
+        />
+        <button type="submit" aria-label="Submit search">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <span class="search-btn-text">Search</span>
+        </button>
       </form>
     </nav>
   </header>
-  <main class="container">
+
+  <main class="container" id="main-content" role="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category if category != 'message' else 'info' }}" role="alert">
+            <span>{{ message }}</span>
+            <button type="button" class="alert-dismiss" aria-label="Dismiss alert">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
     {% block content %}{% endblock %}
   </main>
-  <footer class="site-footer">
-    <small>FeedOps foundation &middot; <a href="/health">health</a></small>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="footer-inner">
+      <p>FeedOps platform &middot; <a href="/health">health</a></p>
+    </div>
   </footer>
+
   <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

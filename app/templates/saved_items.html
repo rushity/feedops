@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}My Saved Shortlist — FeedOps{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 1.5rem auto;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">My Saved Products & Shortlist</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Keep track of items you are considering and monitor for price drops.
+      </p>
+    </div>
+    <a href="{{ url_for('consumer.discover') }}" class="btn btn-primary" style="font-size: 0.85rem;">
+      + Discover More
+    </a>
+  </div>
+
+  {% if saved %}
+    <div style="display: flex; flex-direction: column; gap: 1rem;">
+      {% for item in saved %}
+        <div class="card" style="padding: 1.25rem; display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center;">
+          <div style="width: 100px; height: 100px; background: #f8fafc; border-radius: 6px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--border);">
+            {% if item.image_url %}
+              <img src="{{ item.image_url }}" alt="{{ item.title }}" style="max-width: 90px; max-height: 90px; object-fit: contain;" />
+            {% else %}
+              <span style="font-size: 0.75rem; color: var(--fg-muted); font-weight: 600;">{{ item.category.title() }}</span>
+            {% endif %}
+          </div>
+
+          <div style="flex: 1; min-width: 240px;">
+            <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">
+              {{ item.brand or item.category.title() }} &middot; Added {{ item.saved_at[:10] if item.saved_at else '' }}
+            </div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0.25rem 0 0.5rem 0;">
+              <a href="{{ url_for('consumer.product_detail', product_id=item.id) }}" style="color: var(--fg); text-decoration: none;">
+                {{ item.title }}
+              </a>
+            </h3>
+            <div>
+              <span style="font-size: 1.35rem; font-weight: 800; color: var(--fg);">${{ "{:,.2f}".format(item.price) }}</span>
+              <span class="badge {% if item.availability == 'in_stock' %}badge-ok{% else %}badge-warning{% endif %}" style="margin-left: 0.5rem; font-size: 0.75rem;">
+                {{ item.availability.replace('_', ' ').title() }}
+              </span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <a href="{{ url_for('consumer.affiliate_redirect', product_id=item.id) }}" target="_blank" rel="noopener noreferrer" class="btn btn-primary btn-sm">
+              Buy [^]
+            </a>
+            <form method="post" action="{{ url_for('consumer.unsave_product', product_id=item.id) }}">
+              <button type="submit" class="btn btn-secondary btn-sm" title="Remove from shortlist">
+                Remove
+              </button>
+            </form>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 4rem 2rem;">
+      <h3 style="font-weight: 700; margin-bottom: 0.5rem;">Your shortlist is empty</h3>
+      <p style="color: var(--fg-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+        As you browse the discovery feed or search the catalogue, click "Save" on products to add them to your shortlist.
+      </p>
+      <a href="{{ url_for('consumer.discover') }}" class="btn btn-primary">Browse Discovery Feed</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

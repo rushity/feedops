@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}System Audit Logs — FeedOps Admin{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Immutable System Audit Trail</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Security, moderation, partner status changes, and sensitive governance event logs.
+      </p>
+    </div>
+    <a href="{{ url_for('admin.index') }}" class="btn btn-secondary" style="font-size: 0.85rem;">&larr; Admin Console</a>
+  </div>
+
+  <div class="card" style="overflow-x: auto;">
+    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+      <thead>
+        <tr style="border-bottom: 2px solid var(--border); background: var(--bg);">
+          <th style="padding: 0.75rem 1rem;">Log ID</th>
+          <th style="padding: 0.75rem 1rem;">Action</th>
+          <th style="padding: 0.75rem 1rem;">Target</th>
+          <th style="padding: 0.75rem 1rem;">Operator</th>
+          <th style="padding: 0.75rem 1rem;">Details</th>
+          <th style="padding: 0.75rem 1rem;">Timestamp</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if logs %}
+          {% for log in logs %}
+            <tr style="border-bottom: 1px solid var(--border);">
+              <td style="padding: 0.75rem 1rem; font-family: monospace;">#{{ log.id }}</td>
+              <td style="padding: 0.75rem 1rem; font-weight: 700; color: var(--primary);">{{ log.action }}</td>
+              <td style="padding: 0.75rem 1rem;">{{ log.target_type }} #{{ log.target_id or '—' }}</td>
+              <td style="padding: 0.75rem 1rem;">{{ log.user_email or 'System' }}</td>
+              <td style="padding: 0.75rem 1rem;">{{ log.details }}</td>
+              <td style="padding: 0.75rem 1rem; color: var(--fg-muted);">{{ log.created_at }}</td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="6" style="padding: 3rem 1rem; text-align: center; color: var(--fg-muted);">
+              No audit records found.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

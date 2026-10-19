@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+
+{% block title %}Product Catalogue & Search — FeedOps{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 1.5rem;">
+  <div>
+    <h1 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.25rem;">Product Catalogue & Filter Search</h1>
+    <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+      Search across all verified partner products with category, price range, and availability filtering.
+    </p>
+  </div>
+
+  <!-- Multi-Filter Bar -->
+  <form method="get" action="{{ url_for('consumer.products') }}" class="card" style="padding: 1.25rem;">
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: flex-end;">
+      
+      <div>
+        <label for="q" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Keyword / Search</label>
+        <input type="text" id="q" name="q" value="{{ query | default('') }}" class="input" style="width: 100%; padding: 0.5rem;" placeholder="Product title, brand..." />
+      </div>
+
+      <div>
+        <label for="category" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Category</label>
+        <select id="category" name="category" class="input" style="width: 100%; padding: 0.5rem;">
+          <option value="">All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat.category }}" {% if category == cat.category %}selected{% endif %}>
+              {{ cat.category.title() }} ({{ cat.count }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="brand" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Brand</label>
+        <select id="brand" name="brand" class="input" style="width: 100%; padding: 0.5rem;">
+          <option value="">All Brands</option>
+          {% for b in brands %}
+            <option value="{{ b.brand }}" {% if brand == b.brand %}selected{% endif %}>
+              {{ b.brand }} ({{ b.count }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="min_price" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Min Price ($)</label>
+        <input type="number" id="min_price" name="min_price" value="{{ min_price | default('') }}" class="input" style="width: 100%; padding: 0.5rem;" min="0" step="5" placeholder="0" />
+      </div>
+
+      <div>
+        <label for="max_price" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Max Price ($)</label>
+        <input type="number" id="max_price" name="max_price" value="{{ max_price | default('') }}" class="input" style="width: 100%; padding: 0.5rem;" min="0" step="10" placeholder="5000" />
+      </div>
+
+      <div>
+        <label for="availability" style="display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem;">Availability</label>
+        <select id="availability" name="availability" class="input" style="width: 100%; padding: 0.5rem;">
+          <option value="">Any Status</option>
+          <option value="in_stock" {% if availability == 'in_stock' %}selected{% endif %}>In Stock</option>
+          <option value="preorder" {% if availability == 'preorder' %}selected{% endif %}>Pre-Order</option>
+          <option value="out_of_stock" {% if availability == 'out_of_stock' %}selected{% endif %}>Out of Stock</option>
+        </select>
+      </div>
+
+      <div style="display: flex; gap: 0.5rem;">
+        <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.55rem 1rem;">Filter</button>
+        <a href="{{ url_for('consumer.products') }}" class="btn btn-secondary" style="padding: 0.55rem 0.75rem;">Reset</a>
+      </div>
+
+    </div>
+  </form>
+
+  <!-- Products Grid -->
+  {% if products %}
+    <div style="font-size: 0.9rem; color: var(--fg-muted);">
+      Showing <strong>{{ products|length }}</strong> matching products
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;">
+      {% for product in products %}
+        <div class="card" style="display: flex; flex-direction: column; overflow: hidden;">
+          <div style="height: 160px; background: #f8fafc; display: flex; align-items: center; justify-content: center; position: relative; border-bottom: 1px solid var(--border);">
+            {% if product.image_url %}
+              <img src="{{ product.image_url }}" alt="{{ product.title }}" style="max-height: 100%; max-width: 100%; object-fit: contain; padding: 0.5rem;" onerror="this.style.display='none';" />
+            {% else %}
+              <div style="color: var(--fg-muted); text-align: center;">
+                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
+                </svg>
+                <div style="font-size: 0.75rem;">{{ product.category.title() }}</div>
+              </div>
+            {% endif %}
+
+            <span class="badge {% if product.availability == 'in_stock' %}badge-ok{% elif product.availability == 'preorder' %}badge-warning{% else %}badge-error{% endif %}" style="position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.75rem;">
+              {{ product.availability.replace('_', ' ').title() }}
+            </span>
+          </div>
+
+          <div style="padding: 1rem; flex: 1; display: flex; flex-direction: column;">
+            <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase; margin-bottom: 0.25rem;">
+              {{ product.brand or product.category.title() }}
+            </div>
+
+            <h3 style="font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem 0; line-height: 1.3;">
+              <a href="{{ url_for('consumer.product_detail', product_id=product.id) }}" style="color: var(--fg); text-decoration: none;">
+                {{ product.title }}
+              </a>
+            </h3>
+
+            <div style="margin-top: auto; padding-top: 0.5rem; display: flex; justify-content: space-between; align-items: baseline;">
+              <div>
+                <span style="font-size: 1.25rem; font-weight: 800; color: var(--fg);">
+                  ${{ "{:,.2f}".format(product.price) }}
+                </span>
+                <span style="font-size: 0.75rem; color: var(--fg-muted);">{{ product.currency }}</span>
+              </div>
+              <div style="font-size: 0.75rem; color: var(--fg-muted);">
+                {{ product.partner_name or 'Partner' }}
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; margin-top: 0.75rem;">
+              <a href="{{ url_for('consumer.product_detail', product_id=product.id) }}" class="btn btn-sm btn-secondary" style="flex: 1; text-align: center;">
+                Details
+              </a>
+              <a href="{{ url_for('consumer.affiliate_redirect', product_id=product.id) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-primary" style="flex: 1; text-align: center;">
+                Buy [^]
+              </a>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
+      <h3 style="font-weight: 700; margin-bottom: 0.5rem;">No products found</h3>
+      <p style="color: var(--fg-muted); font-size: 0.95rem; margin-bottom: 1.5rem;">
+        No products match your current search and filter criteria. Try expanding your price range or clearing filters.
+      </p>
+      <a href="{{ url_for('consumer.products') }}" class="btn btn-primary">Clear Filters</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

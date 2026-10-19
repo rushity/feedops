@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block title %}Sign In — FeedOps Discovery{% endblock %}
+
+{% block content %}
+<div style="max-width: 440px; margin: 3rem auto;">
+  <div class="card" style="padding: 2rem;">
+    <h1 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 0.5rem;">Sign In to FeedOps</h1>
+    <p style="color: var(--fg-muted); margin-bottom: 1.5rem; font-size: 0.95rem;">
+      Access your personalized discovery stream and saved shortlist.
+    </p>
+
+    {% if error %}
+      <div class="alert alert-error" style="margin-bottom: 1.25rem;">
+        <span>{{ error }}</span>
+      </div>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('auth.login') }}">
+      <input type="hidden" name="next" value="{{ next }}" />
+
+      <div class="form-group" style="margin-bottom: 1rem;">
+        <label for="email" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Email Address</label>
+        <input type="email" id="email" name="email" class="input" style="width: 100%; padding: 0.6rem;" required autofocus placeholder="you@example.com" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="password" style="display: block; font-weight: 600; margin-bottom: 0.25rem;">Password</label>
+        <input type="password" id="password" name="password" class="input" style="width: 100%; padding: 0.6rem;" required />
+      </div>
+
+      <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; font-weight: 600;">
+        Sign In
+      </button>
+    </form>
+
+    <div style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem; color: var(--fg-muted);">
+      Don't have an account? <a href="{{ url_for('auth.register') }}" style="color: var(--primary); font-weight: 600;">Register here</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -194,3 +194,40 @@ def test_refresh_route_success(app, client, monkeypatch):
 def test_refresh_route_missing_feed(client):
     res = client.post("/feeds/99999/refresh")
     assert res.status_code == 404
+
+
+def test_delete_feed_service_and_route(app, client):
+    fid = _make_feed(app, url="https://example.com/delete-test", title="To Delete")
+    with app.app_context():
+        db = get_db()
+        db.execute("INSERT INTO articles (feed_id, title, url) VALUES (?, ?, ?)",
+                   (fid, "Article in feed", "https://example.com/art1"))
+        db.commit()
+        # Verify inserted
+        assert db.execute("SELECT COUNT(*) AS c FROM articles WHERE feed_id = ?", (fid,)).fetchone()["c"] == 1
+
+    # Route POST /feeds/<fid>/delete
+    res = client.post(f"/feeds/{fid}/delete")
+    assert res.status_code == 200
+    assert b"Deleted feed" in res.data
+
+    with app.app_context():
+        db = get_db()
+        assert feed_service.get_feed(db, fid) is None
+        assert db.execute("SELECT COUNT(*) AS c FROM articles WHERE feed_id = ?", (fid,)).fetchone()["c"] == 0
+
+    # 404 on missing
+    res_missing = client.post("/feeds/99999/delete")
+    assert res_missing.status_code == 404
+
+
+def test_refresh_all_feeds_service_and_route(app, client, monkeypatch):
+    fid1 = _make_feed(app, url="https://example.com/feed-all-1", title="F1")
+    fid2 = _make_feed(app, url="https://example.com/feed-all-2", title="F2")
+    monkeypatch.setattr(feed_service, "_fetch_bytes", lambda url, **k: RSS_SAMPLE)
+
+    res = client.post("/feeds/refresh-all")
+    assert res.status_code == 200
+    assert b"Refreshed 3 of 3 feeds" in res.data
+
+

@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Console — FeedOps Governance{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+  <!-- Header -->
+  <div class="card" style="padding: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;">
+    <div>
+      <h1 style="font-size: 1.75rem; font-weight: 800; margin: 0 0 0.25rem 0;">Platform Administration Console</h1>
+      <p style="color: var(--fg-muted); margin: 0; font-size: 0.95rem;">
+        Partner onboarding review, product catalogue moderation, governance, and audit trails.
+      </p>
+    </div>
+
+    <!-- Quick Admin Nav -->
+    <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+      <a href="{{ url_for('admin.partners') }}" class="btn btn-secondary btn-sm">Partner Review ({{ pending_partners }})</a>
+      <a href="{{ url_for('admin.products') }}" class="btn btn-secondary btn-sm">Product Moderation</a>
+      <a href="{{ url_for('admin.campaigns') }}" class="btn btn-secondary btn-sm">📢 Ad Campaigns</a>
+      <a href="{{ url_for('admin.stale_catalogues') }}" class="btn btn-secondary btn-sm">Stale Feeds</a>
+      <a href="{{ url_for('admin.users') }}" class="btn btn-secondary btn-sm">User Accounts</a>
+      <a href="{{ url_for('admin.audit_logs') }}" class="btn btn-secondary btn-sm">Audit Trail</a>
+    </div>
+  </div>
+
+  <!-- Platform KPI Grid -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem;">
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Registered Users</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0;">{{ user_count }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);"><a href="{{ url_for('admin.users') }}">Manage users &rsaquo;</a></div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Partner Network</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0;">{{ partner_count }}</div>
+      <div style="font-size: 0.8rem; color: #f59e0b; font-weight: 600;">{{ pending_partners }} pending review</div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Catalogue Products</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0;">{{ product_count }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);"><a href="{{ url_for('admin.products') }}">Moderation queue &rsaquo;</a></div>
+    </div>
+
+    <div class="card" style="padding: 1.25rem;">
+      <div style="font-size: 0.8rem; color: var(--fg-muted); text-transform: uppercase;">Affiliate Referrals</div>
+      <div style="font-size: 2rem; font-weight: 800; margin: 0.25rem 0; color: var(--primary);">{{ clicks_count }}</div>
+      <div style="font-size: 0.8rem; color: var(--fg-muted);">Tracked outbound clicks</div>
+    </div>
+  </div>
+
+  <!-- Recent Submissions & Audit -->
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.5rem;">
+    <!-- Recent Partners -->
+    <div class="card" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Recent Partner Applications</h3>
+        <a href="{{ url_for('admin.partners') }}" style="font-size: 0.85rem; color: var(--primary);">Review All</a>
+      </div>
+
+      {% if recent_partners %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for p in recent_partners %}
+            <div style="padding: 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <div style="font-weight: 700;">{{ p.business_name }}</div>
+                <div style="color: var(--fg-muted); font-size: 0.8rem;">{{ p.business_email }} &middot; {{ p.partner_type }}</div>
+              </div>
+              <span class="badge {% if p.status == 'approved' %}badge-ok{% elif p.status == 'submitted' %}badge-warning{% else %}badge-error{% endif %}">
+                {{ p.status }}
+              </span>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--fg-muted); font-size: 0.9rem;">No applications received yet.</p>
+      {% endif %}
+    </div>
+
+    <!-- Recent Audit Logs -->
+    <div class="card" style="padding: 1.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 style="font-size: 1.1rem; font-weight: 700; margin: 0;">Recent Audit Trail</h3>
+        <a href="{{ url_for('admin.audit_logs') }}" style="font-size: 0.85rem; color: var(--primary);">View Full Trail</a>
+      </div>
+
+      {% if recent_audit %}
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+          {% for a in recent_audit %}
+            <div style="padding: 0.6rem 0.75rem; background: var(--bg); border: 1px solid var(--border); border-radius: 6px; font-size: 0.8rem;">
+              <div style="font-weight: 600; color: var(--primary);">{{ a.action }}</div>
+              <div style="color: #334155; margin-top: 0.2rem;">{{ a.details }}</div>
+              <div style="color: var(--fg-muted); font-size: 0.75rem; margin-top: 0.25rem;">{{ a.created_at }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color: var(--fg-muted); font-size: 0.9rem;">No audit events recorded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
